@@ -1,4 +1,4 @@
-﻿using Dapper.Dtos;
+﻿using CapaDapper.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;

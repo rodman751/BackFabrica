@@ -8,12 +8,10 @@ using System.Text;
 namespace Services
 {
 
-
-
     public class AuthService : IAuthService
     {
         private readonly IConfiguration _config;
-        private readonly IAuthRepository _repository; // Tu repo con Dapper
+        private readonly IAuthRepository _repository; 
 
         public AuthService(IConfiguration config, IAuthRepository repository)
         {
@@ -34,9 +32,7 @@ namespace Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ID del usuario
                 new Claim(ClaimTypes.Name, user.UserName),                 // Nombre de usuario
-                // Puedes agregar más cosas si quieres:
-                // new Claim(ClaimTypes.Role, "Admin"), 
-                // new Claim("Empresa", "MiEmpresaS.A.") 
+
             };
 
             // 3. Crear la llave de seguridad (debe coincidir con appsettings)

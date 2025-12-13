@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dapper\Dapper.csproj" />
+    <ProjectReference Include="..\Dapper\CapaDapper.csproj" />
   </ItemGroup>
 
 </Project>

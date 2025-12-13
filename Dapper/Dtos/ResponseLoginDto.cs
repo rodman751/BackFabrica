@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Dapper.Dtos
+namespace CapaDapper.Dtos
 {
     public class ResponseLoginDto
     {

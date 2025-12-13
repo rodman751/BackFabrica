@@ -1,9 +1,11 @@
+using CapaDapper.DataService;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<Services.IAuthRepository, Services.AuthRepository>();
 builder.Services.AddScoped<Services.IAuthService, Services.AuthService>();
-
+builder.Services.AddScoped<IDbMetadataRepository, DbMetadataRepository>();
 
 
 

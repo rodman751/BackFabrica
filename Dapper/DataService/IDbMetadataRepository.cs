@@ -13,5 +13,6 @@ namespace CapaDapper.DataService
 
         // 2. Se conecta a la DB específica y extrae el JSON del esquema
         Task<string> ObtenerEsquemaJsonAsync(string nombreBaseDatos);
+        Task<bool> CreateProd();
     }
 }

@@ -18,7 +18,7 @@ namespace CapaDapper.DataService
             _connectionTemplate = _configuration.GetConnectionString("TemplateConnection");
         }
 
-   
+        #region CConfig conexion
         private IDbConnection CrearConexion(string baseDatos)
         {
             // Reemplazamos el {0} por el nombre de la DB que nos pasan
@@ -54,5 +54,18 @@ namespace CapaDapper.DataService
                 return resultado;
             }
         }
+
+        #endregion
+
+
+        #region CRUD PRODUCTOS
+        public async Task<bool> CreateProd()
+        {
+
+
+            return false;
+        }
+
+        #endregion
     }
 }

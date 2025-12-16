@@ -7,6 +7,7 @@ builder.Services.AddScoped<Services.IAuthRepository, Services.AuthRepository>();
 builder.Services.AddScoped<Services.IAuthService, Services.AuthService>();
 builder.Services.AddScoped<IDbMetadataRepository, DbMetadataRepository>();
 
+builder.Services.AddScoped<IProductoGeneralRepository, ProductoGeneralRepository>();
 
 
 //  fin services

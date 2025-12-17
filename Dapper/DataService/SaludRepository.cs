@@ -1,7 +1,10 @@
 using Dapper;
-using System.Data;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using CapaDapper.Entidades.Salud;
+using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace CapaDapper.DataService
 {

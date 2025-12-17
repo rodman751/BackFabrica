@@ -1,10 +1,7 @@
 using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using CapaDapper.Entidades.Productos;
-using System.Collections.Generic;
 using System.Data;
-using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
+using CapaDapper.Entidades.Productos;
 
 namespace CapaDapper.DataService
 {

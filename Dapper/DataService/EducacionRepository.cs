@@ -11,8 +11,7 @@ namespace CapaDapper.DataService
 
         public EducacionRepository(IConfiguration configuration)
         {
-            // OJO: Asegúrate de tener "EducationConnection" en tu appsettings.json
-            _connectionString = configuration.GetConnectionString("EducationConnection");
+            _connectionString = configuration.GetConnectionString("TemplateConnection");
         }
 
         private IDbConnection CreateConnection() => new SqlConnection(_connectionString);

@@ -10,9 +10,8 @@ namespace CapaDapper.DataService
         private readonly string _connectionString;
 
         public SaludRepository(IConfiguration configuration)
-        {
-            // Asegúrate de tener "HealthConnection" en appsettings.json
-            _connectionString = configuration.GetConnectionString("HealthConnection");
+        {            
+            _connectionString = configuration.GetConnectionString("TemplateConnection");
         }
 
         private IDbConnection CreateConnection() => new SqlConnection(_connectionString);

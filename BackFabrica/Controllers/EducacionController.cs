@@ -1,3 +1,4 @@
+using CapaDapper.Cadena;
 using CapaDapper.DataService;
 using CapaDapper.Entidades.Educacion;
 using Microsoft.AspNetCore.Mvc;
@@ -9,23 +10,26 @@ namespace BackFabrica.Controllers
     public class EducacionController : ControllerBase
     {
         private readonly IEducacionRepository _repo;
-
-        public EducacionController(IEducacionRepository repository)
+        private readonly IDatabaseContext _dbContext;
+        public EducacionController(IEducacionRepository repository, IDatabaseContext dbContext)
         {
             _repo = repository;
+            _dbContext = dbContext;
         }
 
         #region Endpoints Estudiantes
         [HttpGet("estudiantes")]
-        public async Task<IActionResult> GetEstudiantes()
+        public async Task<IActionResult> GetEstudiantes([FromHeader(Name = "X-DbName")] string dbName)
         {
+            _dbContext.CurrentDb = dbName; // OBLIGATORIO
             var lista = await _repo.ObtenerEstudiantesAsync();
             return Ok(lista);
         }
 
         [HttpGet("estudiantes/{legajo}")]
-        public async Task<IActionResult> GetEstudiantePorLegajo(string legajo)
+        public async Task<IActionResult> GetEstudiantePorLegajo([FromHeader(Name = "X-DbName")] string dbName,string legajo)
         {
+            _dbContext.CurrentDb = dbName;
             var est = await _repo.ObtenerEstudiantePorLegajoAsync(legajo);
             return est != null ? Ok(est) : NotFound("Estudiante no encontrado");
         }
@@ -40,8 +44,9 @@ namespace BackFabrica.Controllers
 
         #region Endpoints Profesores
         [HttpGet("profesores")]
-        public async Task<IActionResult> GetProfesores()
+        public async Task<IActionResult> GetProfesores([FromHeader(Name = "X-DbName")] string dbName)
         {
+            _dbContext.CurrentDb = dbName;
             var lista = await _repo.ObtenerProfesoresAsync();
             return Ok(lista);
         }

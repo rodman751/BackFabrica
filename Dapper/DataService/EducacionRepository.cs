@@ -1,40 +1,43 @@
-using Dapper;
-using System.Data;
-using Microsoft.Data.SqlClient;
+using CapaDapper.Cadena;
 using CapaDapper.Entidades.Educacion;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System.Data;
 
 namespace CapaDapper.DataService
 {
     public class EducacionRepository : IEducacionRepository
     {
-        private readonly string _connectionString;
-
-        public EducacionRepository(IConfiguration configuration)
+        //INYECCION NUEVA
+        private readonly IDbConnectionFactory _connectionFactory;
+        public EducacionRepository(IDbConnectionFactory connectionFactory)
         {
-            _connectionString = configuration.GetConnectionString("TemplateConnection");
+
+            _connectionFactory = connectionFactory;
+
         }
 
-        private IDbConnection CreateConnection() => new SqlConnection(_connectionString);
 
         #region Estudiantes
         public async Task<IEnumerable<Estudiante>> ObtenerEstudiantesAsync()
         {
             var sql = "SELECT * FROM estudiantes";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Estudiante>(sql);
         }
 
         public async Task<Estudiante> ObtenerEstudiantePorIdAsync(int id)
         {
             var sql = "SELECT * FROM estudiantes WHERE id = @Id";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Estudiante>(sql, new { Id = id });
         }
 
         public async Task<Estudiante> ObtenerEstudiantePorLegajoAsync(string legajo)
         {
             var sql = "SELECT * FROM estudiantes WHERE legajo = @Legajo";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Estudiante>(sql, new { Legajo = legajo });
         }
 
@@ -44,7 +47,7 @@ namespace CapaDapper.DataService
             var sql = @"
                 INSERT INTO estudiantes (usuario_id, legajo, nombres, apellidos, fecha_nacimiento, activo)
                 VALUES (@UsuarioId, @Legajo, @Nombres, @Apellidos, @FechaNacimiento, 1)";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, e) > 0;
         }
 
@@ -54,7 +57,7 @@ namespace CapaDapper.DataService
                 UPDATE estudiantes 
                 SET nombres = @Nombres, apellidos = @Apellidos, fecha_nacimiento = @FechaNacimiento, activo = @Activo
                 WHERE id = @Id";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, e) > 0;
         }
         #endregion
@@ -63,14 +66,14 @@ namespace CapaDapper.DataService
         public async Task<IEnumerable<Profesor>> ObtenerProfesoresAsync()
         {
             var sql = "SELECT * FROM profesores";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Profesor>(sql);
         }
 
         public async Task<bool> CrearProfesorAsync(Profesor p)
         {
             var sql = "INSERT INTO profesores (usuario_id, nombres, especialidad, email) VALUES (@UsuarioId, @Nombres, @Especialidad, @Email)";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
         }
         #endregion
@@ -79,14 +82,14 @@ namespace CapaDapper.DataService
         public async Task<IEnumerable<Curso>> ObtenerCursosAsync()
         {
             var sql = "SELECT * FROM cursos";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Curso>(sql);
         }
 
         public async Task<bool> CrearCursoAsync(Curso c)
         {
             var sql = "INSERT INTO cursos (codigo, nombre, descripcion, creditos, profesor_id) VALUES (@Codigo, @Nombre, @Descripcion, @Creditos, @ProfesorId)";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }
         #endregion
@@ -98,7 +101,7 @@ namespace CapaDapper.DataService
             var sql = @"
                 INSERT INTO inscripciones (estudiante_id, curso_id, periodo, calificacion) 
                 VALUES (@EstudianteId, @CursoId, @Periodo, NULL)";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             try {
                 return await conn.ExecuteAsync(sql, i) > 0;
             } catch {
@@ -109,7 +112,7 @@ namespace CapaDapper.DataService
         public async Task<bool> CalificarEstudianteAsync(int inscripcionId, decimal nota)
         {
             var sql = "UPDATE inscripciones SET calificacion = @Nota WHERE id = @Id";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, new { Id = inscripcionId, Nota = nota }) > 0;
         }
 
@@ -123,8 +126,8 @@ namespace CapaDapper.DataService
                 LEFT JOIN profesores p ON c.profesor_id = p.id
                 WHERE i.estudiante_id = @Id
                 ORDER BY i.periodo DESC";
-            
-            using var conn = CreateConnection();
+
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync(sql, new { Id = estudianteId });
         }
         #endregion

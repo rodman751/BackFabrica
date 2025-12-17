@@ -1,3 +1,4 @@
+using CapaDapper.Cadena;
 using CapaDapper.DataService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,8 +8,13 @@ builder.Services.AddScoped<Services.IAuthRepository, Services.AuthRepository>();
 builder.Services.AddScoped<Services.IAuthService, Services.AuthService>();
 builder.Services.AddScoped<IDbMetadataRepository, DbMetadataRepository>();
 
-builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
+builder.Services.AddScoped<IProductosRepository, ProductosRepository>();
 builder.Services.AddScoped<IEducacionRepository, EducacionRepository>();
+builder.Services.AddScoped<ISaludRepository, SaludRepository>();
+
+
+builder.Services.AddScoped<IDatabaseContext, DatabaseContext>();
+builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
 //  fin services
 

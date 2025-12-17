@@ -18,6 +18,12 @@ namespace CapaDapper.DataService
             _connectionTemplate = _configuration.GetConnectionString("TemplateConnection");
         }
 
+        public string CreateConnectionString(string dbName) =>
+         string.Format(_connectionTemplate, dbName);
+
+        public IDbConnection CreateConnection(string dbName) =>
+            new SqlConnection(CreateConnectionString(dbName));
+
         #region CConfig conexion
         private IDbConnection CrearConexion(string baseDatos)
         {

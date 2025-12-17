@@ -2,6 +2,7 @@ using Dapper;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using CapaDapper.Entidades.Salud;
+using Microsoft.Extensions.Configuration;
 
 namespace CapaDapper.DataService
 {

@@ -1,5 +1,6 @@
 using CapaDapper.Entidades.Educacion;
 
+
 namespace CapaDapper.DataService
 {
     public interface IEducacionRepository

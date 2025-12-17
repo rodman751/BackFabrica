@@ -1,3 +1,4 @@
+using CapaDapper.Cadena;
 using Dapper;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -8,34 +9,34 @@ namespace CapaDapper.DataService
 {
     public class SaludRepository : ISaludRepository
     {
-        private readonly string _connectionString;
+        //INYECCION NUEVA
+        private readonly IDbConnectionFactory _connectionFactory;
+        public SaludRepository(IDbConnectionFactory connectionFactory)
+        {
 
-        public SaludRepository(IConfiguration configuration)
-        {            
-            _connectionString = configuration.GetConnectionString("TemplateConnection");
+            _connectionFactory = connectionFactory;
+
         }
-
-        private IDbConnection CreateConnection() => new SqlConnection(_connectionString);
 
         #region Pacientes
         public async Task<IEnumerable<Paciente>> ObtenerPacientesAsync()
         {
             var sql = "SELECT * FROM pacientes";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Paciente>(sql);
         }
 
         public async Task<Paciente> ObtenerPacientePorIdAsync(int id)
         {
             var sql = "SELECT * FROM pacientes WHERE id = @Id";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Paciente>(sql, new { Id = id });
         }
 
         public async Task<Paciente> ObtenerPacientePorDniAsync(string dni)
         {
             var sql = "SELECT * FROM pacientes WHERE dni = @Dni";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Paciente>(sql, new { Dni = dni });
         }
 
@@ -46,7 +47,7 @@ namespace CapaDapper.DataService
                 INSERT INTO pacientes (dni, nombres, apellidos, fecha_nacimiento, telefono, grupo_sanguineo, antecedentes)
                 VALUES (@Dni, @Nombres, @Apellidos, @FechaNacimiento, @Telefono, @GrupoSanguineo, @Antecedentes)";
             
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             try {
                 return await conn.ExecuteAsync(sql, p) > 0;
             } catch (SqlException) {
@@ -62,7 +63,7 @@ namespace CapaDapper.DataService
                 SET nombres = @Nombres, apellidos = @Apellidos, telefono = @Telefono, 
                     grupo_sanguineo = @GrupoSanguineo, antecedentes = @Antecedentes
                 WHERE id = @Id";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
         }
         #endregion
@@ -71,14 +72,14 @@ namespace CapaDapper.DataService
         public async Task<IEnumerable<Medico>> ObtenerMedicosAsync()
         {
             var sql = "SELECT * FROM medicos";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Medico>(sql);
         }
 
         public async Task<bool> CrearMedicoAsync(Medico m)
         {
             var sql = "INSERT INTO medicos (usuario_id, nombres, especialidad, numero_licencia, consultorio) VALUES (@UsuarioId, @Nombres, @Especialidad, @NumeroLicencia, @Consultorio)";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, m) > 0;
         }
         #endregion
@@ -89,7 +90,7 @@ namespace CapaDapper.DataService
             var sql = @"
                 INSERT INTO citas (paciente_id, medico_id, fecha_hora, motivo_consulta, estado)
                 VALUES (@PacienteId, @MedicoId, @FechaHora, @MotivoConsulta, 'programada')";
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }
 
@@ -104,7 +105,7 @@ namespace CapaDapper.DataService
                 AND CAST(c.fecha_hora AS DATE) = CAST(@Fecha AS DATE)
                 ORDER BY c.fecha_hora ASC";
             
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Cita>(sql, new { MedicoId = medicoId, Fecha = fecha });
         }
 
@@ -119,7 +120,7 @@ namespace CapaDapper.DataService
                     UPDATE citas SET estado = 'completada' WHERE id = @CitaId;
                 COMMIT;";
             
-            using var conn = CreateConnection();
+            using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, d) > 0;
         }
         #endregion

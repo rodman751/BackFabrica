@@ -21,7 +21,6 @@ namespace BackFabrica.Controllers
         {
             // 1. Intentamos leer los headers personalizados
             // Usamos "X-" porque es la convención para headers propios, 
-            // pero puedes llamarlos simplemente "Usuario" y "Password" si prefieres.
             string usuario = Request.Headers["X-Usuario"];
             string password = Request.Headers["X-Password"];
 

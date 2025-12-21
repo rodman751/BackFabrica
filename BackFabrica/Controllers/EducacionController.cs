@@ -1,12 +1,14 @@
 using CapaDapper.Cadena;
 using CapaDapper.DataService;
 using CapaDapper.Entidades.Educacion;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackFabrica.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EducacionController : ControllerBase
     {
         private readonly IEducacionRepository _repo;

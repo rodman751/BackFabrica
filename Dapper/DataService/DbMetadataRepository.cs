@@ -64,14 +64,6 @@ namespace CapaDapper.DataService
         #endregion
 
 
-        #region CRUD PRODUCTOS
-        public async Task<bool> CreateProd()
-        {
-
-
-            return false;
-        }
-
-        #endregion
+        
     }
 }

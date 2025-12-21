@@ -21,7 +21,7 @@ namespace BackFabrica.Controllers
         [HttpGet("estudiantes")]
         public async Task<IActionResult> GetEstudiantes([FromHeader(Name = "X-DbName")] string dbName)
         {
-            _dbContext.CurrentDb = dbName; // OBLIGATORIO
+            _dbContext.CurrentDb = dbName;
             var lista = await _repo.ObtenerEstudiantesAsync();
             return Ok(lista);
         }

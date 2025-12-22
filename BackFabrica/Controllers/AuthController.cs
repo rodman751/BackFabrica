@@ -1,4 +1,5 @@
 ﻿using CapaDapper.Cadena;
+using CapaDapper.DataService;
 using CapaDapper.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +14,12 @@ namespace BackFabrica.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IDatabaseContext _dbContext;
-        public AuthController(IAuthService authService, IDatabaseContext  databaseContext)
+        private readonly IDbMetadataRepository _dbService;
+        public AuthController(IAuthService authService, IDatabaseContext  databaseContext, IDbMetadataRepository dbMetadataRepository)
         {
             _authService = authService;
             _dbContext = databaseContext;
+            _dbService = dbMetadataRepository;
         }
 
         [HttpPost("login")]
@@ -40,6 +43,21 @@ namespace BackFabrica.Controllers
                 return Unauthorized(new { message = ex.Message });
             }
         }
-        
+
+
+        [HttpPost("crear-modulo")]
+        public async Task<IActionResult> CrearModulo([FromBody] RequestCrearModuloDto request)
+        {
+            
+            var resultado = await _dbService.CrearNuevoModuloAsync(request);
+
+            if (resultado)
+            {
+                return Ok(new { mensaje = $"Base de datos {request.NombreDb} creada con éxito." });
+            }
+
+            return StatusCode(500, "Error interno al procesar la creación de la base de datos.");
+        }
+
     }
 }

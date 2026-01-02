@@ -20,7 +20,9 @@ namespace CapaDapper.DataService
 
         #region Cursos
         Task<IEnumerable<Curso>> ObtenerCursosAsync();
+        Task<Curso> ObtenerCursoPorIdAsync(int id);
         Task<bool> CrearCursoAsync(Curso curso);
+        Task<bool> ActualizarCursoAsync(Curso curso);
         #endregion
 
         #region Inscripciones (Matrícula y Notas)

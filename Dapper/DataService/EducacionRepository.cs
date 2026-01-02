@@ -86,9 +86,26 @@ namespace CapaDapper.DataService
             return await conn.QueryAsync<Curso>(sql);
         }
 
+        public async Task<Curso> ObtenerCursoPorIdAsync(int id)
+        {
+            var sql = "SELECT * FROM cursos WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Curso>(sql, new { Id = id });
+        }
+
         public async Task<bool> CrearCursoAsync(Curso c)
         {
             var sql = "INSERT INTO cursos (codigo, nombre, descripcion, creditos, profesor_id) VALUES (@Codigo, @Nombre, @Descripcion, @Creditos, @ProfesorId)";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, c) > 0;
+        }
+
+        public async Task<bool> ActualizarCursoAsync(Curso c)
+        {
+            var sql = @"
+                UPDATE cursos
+                SET codigo = @Codigo, nombre = @Nombre, descripcion = @Descripcion, creditos = @Creditos, profesor_id = @ProfesorId
+                WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }

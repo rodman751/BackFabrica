@@ -70,12 +70,29 @@ namespace BackFabrica.Controllers
             return Ok(lista);
         }
 
+        [HttpGet("cursos/{id}")]
+        public async Task<IActionResult> GetCursoPorId([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var curso = await _repo.ObtenerCursoPorIdAsync(id);
+            return curso != null ? Ok(curso) : NotFound("Curso no encontrado");
+        }
+
         [HttpPost("cursos")]
         public async Task<IActionResult> PostCurso([FromHeader(Name = "X-DbName")] string dbName, [FromBody] Curso curso)
         {
             _dbContext.CurrentDb = dbName;
             var result = await _repo.CrearCursoAsync(curso);
             return result ? Ok("Curso creado") : BadRequest("Error");
+        }
+
+        [HttpPut("cursos/{id}")]
+        public async Task<IActionResult> PutCurso([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Curso curso)
+        {
+            _dbContext.CurrentDb = dbName;
+            curso.Id = id; // Asegurarse de que el ID del objeto coincida con el ID de la URL
+            var result = await _repo.ActualizarCursoAsync(curso);
+            return result ? Ok("Curso actualizado") : BadRequest("Error al actualizar");
         }
         #endregion
 

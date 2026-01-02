@@ -1,7 +1,10 @@
-﻿using CapaDapper.Dtos;
+﻿using CapaDapper.Cadena;
+using CapaDapper.DataService;
+using CapaDapper.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Services;
+using System.Xml.Linq;
 
 namespace BackFabrica.Controllers
 {
@@ -10,37 +13,51 @@ namespace BackFabrica.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-
-        public AuthController(IAuthService authService)
+        private readonly IDatabaseContext _dbContext;
+        private readonly IDbMetadataRepository _dbService;
+        public AuthController(IAuthService authService, IDatabaseContext  databaseContext, IDbMetadataRepository dbMetadataRepository)
         {
             _authService = authService;
+            _dbContext = databaseContext;
+            _dbService = dbMetadataRepository;
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login()
+        public async Task<IActionResult> Login([FromHeader(Name = "X-DbName")] string dbName)
         {
-            // 1. Intentamos leer los headers personalizados
-            // Usamos "X-" porque es la convención para headers propios, 
-            // pero puedes llamarlos simplemente "Usuario" y "Password" si prefieres.
             string usuario = Request.Headers["X-Usuario"];
             string password = Request.Headers["X-Password"];
 
-            // 2. Validamos que vengan los datos
+            _dbContext.CurrentDb = dbName; // OBLIGATORIO
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
                 return BadRequest(new { message = "Faltan las cabeceras 'X-Usuario' o 'X-Password'" });
             }
-
-            // 3. Llamamos al servicio (esto es igual que antes)
-            var token = await _authService.LoginAsync(usuario, password);
-
-            if (token == null)
+            try
             {
-                return Unauthorized(new { message = "Credenciales incorrectas" });
+                var token = await _authService.LoginAsync(usuario, password);
+                return Ok(new { token });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+        }
+
+
+        [HttpPost("crear-modulo")]
+        public async Task<IActionResult> CrearModulo([FromBody] RequestCrearModuloDto request)
+        {
+            
+            var resultado = await _dbService.CrearNuevoModuloAsync(request);
+
+            if (resultado)
+            {
+                return Ok(new { mensaje = $"Base de datos {request.NombreDb} creada con éxito." });
             }
 
-            return Ok(new { token = token });
+            return StatusCode(500, "Error interno al procesar la creación de la base de datos.");
         }
-        
+
     }
 }

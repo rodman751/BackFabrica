@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace CapaDapper.Dtos
 {
-    public class LoginDto
+    public class RequestCrearModuloDto
     {
-        public string Usuario { get; set; }
-        public string Password { get; set; }
+        public string NombreDb { get; set; }
+        public string JsonTablas { get; set; }
     }
-
 }

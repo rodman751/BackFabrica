@@ -9,6 +9,7 @@ namespace Services
 {
     public interface IAuthRepository
     {
-        Task<ResponseLoginDto> ValidarUsuario(string usuario, string password);
+  
+        Task<ValidarLoginResult> ValidarUserPassAsync(string username, string passwordHash);
     }
 }

@@ -59,12 +59,19 @@ namespace CapaDapper.DataService
         public async Task<bool> ActualizarHistoriaClinicaAsync(Paciente p)
         {
             var sql = @"
-                UPDATE pacientes 
-                SET nombres = @Nombres, apellidos = @Apellidos, telefono = @Telefono, 
+                UPDATE pacientes
+                SET nombres = @Nombres, apellidos = @Apellidos, telefono = @Telefono,
                     grupo_sanguineo = @GrupoSanguineo, antecedentes = @Antecedentes
                 WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
+        }
+
+        public async Task<bool> EliminarPacienteAsync(int id)
+        {
+            var sql = "DELETE FROM pacientes WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
         }
         #endregion
 
@@ -76,15 +83,55 @@ namespace CapaDapper.DataService
             return await conn.QueryAsync<Medico>(sql);
         }
 
+        public async Task<Medico> ObtenerMedicoPorIdAsync(int id)
+        {
+            var sql = "SELECT * FROM medicos WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Medico>(sql, new { Id = id });
+        }
+
         public async Task<bool> CrearMedicoAsync(Medico m)
         {
             var sql = "INSERT INTO medicos (usuario_id, nombres, especialidad, numero_licencia, consultorio) VALUES (@UsuarioId, @Nombres, @Especialidad, @NumeroLicencia, @Consultorio)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, m) > 0;
         }
+
+        public async Task<bool> ActualizarMedicoAsync(Medico m)
+        {
+            var sql = @"
+                UPDATE medicos
+                SET usuario_id = @UsuarioId, nombres = @Nombres, especialidad = @Especialidad,
+                    numero_licencia = @NumeroLicencia, consultorio = @Consultorio
+                WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, m) > 0;
+        }
+
+        public async Task<bool> EliminarMedicoAsync(int id)
+        {
+            var sql = "DELETE FROM medicos WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
+        }
         #endregion
 
         #region Citas y Diagnosticos
+        // Citas
+        public async Task<IEnumerable<Cita>> ObtenerCitasAsync()
+        {
+            var sql = "SELECT * FROM citas";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryAsync<Cita>(sql);
+        }
+
+        public async Task<Cita> ObtenerCitaPorIdAsync(int id)
+        {
+            var sql = "SELECT * FROM citas WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Cita>(sql, new { Id = id });
+        }
+
         public async Task<bool> AgendarCitaAsync(Cita c)
         {
             var sql = @"
@@ -98,15 +145,48 @@ namespace CapaDapper.DataService
         {
             // Filtramos por ID médico y por el día (ignorando la hora exacta)
             var sql = @"
-                SELECT c.*, p.nombres, p.apellidos 
+                SELECT c.*, p.nombres, p.apellidos
                 FROM citas c
                 JOIN pacientes p ON c.paciente_id = p.id
-                WHERE c.medico_id = @MedicoId 
+                WHERE c.medico_id = @MedicoId
                 AND CAST(c.fecha_hora AS DATE) = CAST(@Fecha AS DATE)
                 ORDER BY c.fecha_hora ASC";
-            
+
             using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Cita>(sql, new { MedicoId = medicoId, Fecha = fecha });
+        }
+
+        public async Task<bool> ActualizarCitaAsync(Cita c)
+        {
+            var sql = @"
+                UPDATE citas
+                SET paciente_id = @PacienteId, medico_id = @MedicoId, fecha_hora = @FechaHora,
+                    motivo_consulta = @MotivoConsulta, estado = @Estado
+                WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, c) > 0;
+        }
+
+        public async Task<bool> EliminarCitaAsync(int id)
+        {
+            var sql = "DELETE FROM citas WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
+        }
+
+        // Diagnosticos
+        public async Task<IEnumerable<Diagnostico>> ObtenerDiagnosticosAsync()
+        {
+            var sql = "SELECT * FROM diagnosticos";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryAsync<Diagnostico>(sql);
+        }
+
+        public async Task<Diagnostico> ObtenerDiagnosticoPorIdAsync(int id)
+        {
+            var sql = "SELECT * FROM diagnosticos WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Diagnostico>(sql, new { Id = id });
         }
 
         public async Task<bool> RegistrarDiagnosticoAsync(Diagnostico d)
@@ -119,9 +199,27 @@ namespace CapaDapper.DataService
 
                     UPDATE citas SET estado = 'completada' WHERE id = @CitaId;
                 COMMIT;";
-            
+
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, d) > 0;
+        }
+
+        public async Task<bool> ActualizarDiagnosticoAsync(Diagnostico d)
+        {
+            var sql = @"
+                UPDATE diagnosticos
+                SET cita_id = @CitaId, descripcion_diagnostico = @DescripcionDiagnostico,
+                    tratamiento_recetado = @TratamientoRecetado, proxima_visita = @ProximaVisita
+                WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, d) > 0;
+        }
+
+        public async Task<bool> EliminarDiagnosticoAsync(int id)
+        {
+            var sql = "DELETE FROM diagnosticos WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
         }
         #endregion
     }

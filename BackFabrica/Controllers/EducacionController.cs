@@ -26,8 +26,16 @@ namespace BackFabrica.Controllers
             return Ok(lista);
         }
 
+        [HttpGet("estudiantes/{id:int}")]
+        public async Task<IActionResult> GetEstudiantePorId([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var est = await _repo.ObtenerEstudiantePorIdAsync(id);
+            return est != null ? Ok(est) : NotFound("Estudiante no encontrado");
+        }
+
         [HttpGet("estudiantes/{legajo}")]
-        public async Task<IActionResult> GetEstudiantePorLegajo([FromHeader(Name = "X-DbName")] string dbName,string legajo)
+        public async Task<IActionResult> GetEstudiantePorLegajo([FromHeader(Name = "X-DbName")] string dbName, string legajo)
         {
             _dbContext.CurrentDb = dbName;
             var est = await _repo.ObtenerEstudiantePorLegajoAsync(legajo);
@@ -41,6 +49,23 @@ namespace BackFabrica.Controllers
             var result = await _repo.CrearEstudianteAsync(est);
             return result ? StatusCode(201, "Estudiante matriculado") : BadRequest("Error al crear (posible legajo duplicado)");
         }
+
+        [HttpPut("estudiantes/{id}")]
+        public async Task<IActionResult> PutEstudiante([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Estudiante estudiante)
+        {
+            _dbContext.CurrentDb = dbName;
+            estudiante.Id = id;
+            var result = await _repo.ActualizarEstudianteAsync(estudiante);
+            return result ? Ok("Estudiante actualizado") : BadRequest("Error al actualizar");
+        }
+
+        [HttpDelete("estudiantes/{id}")]
+        public async Task<IActionResult> DeleteEstudiante([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.EliminarEstudianteAsync(id);
+            return result ? Ok("Estudiante eliminado") : NotFound("Estudiante no encontrado");
+        }
         #endregion
 
         #region Endpoints Profesores
@@ -52,12 +77,37 @@ namespace BackFabrica.Controllers
             return Ok(lista);
         }
 
+        [HttpGet("profesores/{id}")]
+        public async Task<IActionResult> GetProfesorPorId([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var profesor = await _repo.ObtenerProfesorPorIdAsync(id);
+            return profesor != null ? Ok(profesor) : NotFound("Profesor no encontrado");
+        }
+
         [HttpPost("profesores")]
         public async Task<IActionResult> PostProfesor([FromHeader(Name = "X-DbName")] string dbName, [FromBody] Profesor pro)
         {
             _dbContext.CurrentDb = dbName;
             var result = await _repo.CrearProfesorAsync(pro);
             return result ? Ok("Profesor registrado") : BadRequest("Error");
+        }
+
+        [HttpPut("profesores/{id}")]
+        public async Task<IActionResult> PutProfesor([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Profesor profesor)
+        {
+            _dbContext.CurrentDb = dbName;
+            profesor.Id = id;
+            var result = await _repo.ActualizarProfesorAsync(profesor);
+            return result ? Ok("Profesor actualizado") : BadRequest("Error al actualizar");
+        }
+
+        [HttpDelete("profesores/{id}")]
+        public async Task<IActionResult> DeleteProfesor([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.EliminarProfesorAsync(id);
+            return result ? Ok("Profesor eliminado") : NotFound("Profesor no encontrado");
         }
         #endregion
 
@@ -93,6 +143,14 @@ namespace BackFabrica.Controllers
             curso.Id = id; // Asegurarse de que el ID del objeto coincida con el ID de la URL
             var result = await _repo.ActualizarCursoAsync(curso);
             return result ? Ok("Curso actualizado") : BadRequest("Error al actualizar");
+        }
+
+        [HttpDelete("cursos/{id}")]
+        public async Task<IActionResult> DeleteCurso([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.EliminarCursoAsync(id);
+            return result ? Ok("Curso eliminado") : NotFound("Curso no encontrado");
         }
         #endregion
 

@@ -54,11 +54,18 @@ namespace CapaDapper.DataService
         public async Task<bool> ActualizarEstudianteAsync(Estudiante e)
         {
             var sql = @"
-                UPDATE estudiantes 
+                UPDATE estudiantes
                 SET nombres = @Nombres, apellidos = @Apellidos, fecha_nacimiento = @FechaNacimiento, activo = @Activo
                 WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, e) > 0;
+        }
+
+        public async Task<bool> EliminarEstudianteAsync(int id)
+        {
+            var sql = "DELETE FROM estudiantes WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
         }
         #endregion
 
@@ -70,11 +77,35 @@ namespace CapaDapper.DataService
             return await conn.QueryAsync<Profesor>(sql);
         }
 
+        public async Task<Profesor> ObtenerProfesorPorIdAsync(int id)
+        {
+            var sql = "SELECT * FROM profesores WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryFirstOrDefaultAsync<Profesor>(sql, new { Id = id });
+        }
+
         public async Task<bool> CrearProfesorAsync(Profesor p)
         {
             var sql = "INSERT INTO profesores (usuario_id, nombres, especialidad, email) VALUES (@UsuarioId, @Nombres, @Especialidad, @Email)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
+        }
+
+        public async Task<bool> ActualizarProfesorAsync(Profesor p)
+        {
+            var sql = @"
+                UPDATE profesores
+                SET usuario_id = @UsuarioId, nombres = @Nombres, especialidad = @Especialidad, email = @Email
+                WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, p) > 0;
+        }
+
+        public async Task<bool> EliminarProfesorAsync(int id)
+        {
+            var sql = "DELETE FROM profesores WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
         }
         #endregion
 
@@ -108,6 +139,13 @@ namespace CapaDapper.DataService
                 WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
+        }
+
+        public async Task<bool> EliminarCursoAsync(int id)
+        {
+            var sql = "DELETE FROM cursos WHERE id = @Id";
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
         }
         #endregion
 

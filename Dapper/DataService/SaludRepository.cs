@@ -132,16 +132,32 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Cita>(sql, new { Id = id });
         }
 
-        public async Task<bool> AgendarCitaAsync(Cita c)
-        {
-            var sql = @"
-                INSERT INTO citas (paciente_id, medico_id, fecha_hora, motivo_consulta, estado)
-                VALUES (@PacienteId, @MedicoId, @FechaHora, @MotivoConsulta, 'programada')";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, c) > 0;
-        }
 
-        public async Task<IEnumerable<Cita>> ObtenerAgendaMedicoAsync(int medicoId, DateTime fecha)
+		public async Task<bool> AgendarCitaAsync(Cita c)
+		{
+			var sql = @"
+        INSERT INTO citas (paciente_id, medico_id, fecha_hora, motivo_consulta, estado, created_at)
+        VALUES (@PacienteId, @MedicoId, @FechaHora, @MotivoConsulta, @Estado, GETDATE())";
+
+			using var conn = _connectionFactory.CreateConnection();
+
+			// Agregar logging para debug
+			Console.WriteLine($"Insertando cita - PacienteId: {c.PacienteId}, MedicoId: {c.MedicoId}");
+
+			try
+			{
+				var result = await conn.ExecuteAsync(sql, c);
+				Console.WriteLine($"Resultado INSERT: {result} filas afectadas");
+				return result > 0;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error al insertar cita: {ex.Message}");
+				throw;
+			}
+		}
+
+		public async Task<IEnumerable<Cita>> ObtenerAgendaMedicoAsync(int medicoId, DateTime fecha)
         {
             // Filtramos por ID médico y por el día (ignorando la hora exacta)
             var sql = @"

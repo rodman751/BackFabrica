@@ -31,6 +31,7 @@ namespace CapaDapper.DataService
         #endregion
 
         #region Inscripciones (Matrícula y Notas)
+        Task<IEnumerable<dynamic>> ObtenerInscripcionesAsync();
         Task<bool> InscribirEstudianteAsync(Inscripcion inscripcion);
         Task<bool> CalificarEstudianteAsync(int inscripcionId, decimal nota);
         Task<IEnumerable<dynamic>> ObtenerHistorialAcademicoAsync(int estudianteId);

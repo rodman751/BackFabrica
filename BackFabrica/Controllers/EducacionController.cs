@@ -88,9 +88,17 @@ namespace BackFabrica.Controllers
         [HttpPost("profesores")]
         public async Task<IActionResult> PostProfesor([FromHeader(Name = "X-DbName")] string dbName, [FromBody] Profesor pro)
         {
-            _dbContext.CurrentDb = dbName;
-            var result = await _repo.CrearProfesorAsync(pro);
-            return result ? Ok("Profesor registrado") : BadRequest("Error");
+            try
+            {
+                _dbContext.CurrentDb = dbName;
+                var result = await _repo.CrearProfesorAsync(pro);
+                return result ? Ok("Profesor registrado") : BadRequest("Error al crear profesor");
+            }
+            catch (Exception ex)
+            {
+                // Return the actual error message to help debug
+                return StatusCode(500, $"Error del servidor: {ex.Message}");
+            }
         }
 
         [HttpPut("profesores/{id}")]
@@ -140,6 +148,17 @@ namespace BackFabrica.Controllers
         public async Task<IActionResult> PutCurso([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Curso curso)
         {
             _dbContext.CurrentDb = dbName;
+
+            // DEBUG: Log del objeto recibido desde el frontend
+            Console.WriteLine($"🌐 PutCurso - Datos recibidos del frontend:");
+            Console.WriteLine($"   URL id: {id}");
+            Console.WriteLine($"   curso.Id: {curso.Id}");
+            Console.WriteLine($"   curso.Codigo: {curso.Codigo}");
+            Console.WriteLine($"   curso.Nombre: {curso.Nombre}");
+            Console.WriteLine($"   curso.Descripcion: {curso.Descripcion}");
+            Console.WriteLine($"   curso.Creditos: {curso.Creditos}");
+            Console.WriteLine($"   curso.ProfesorId: {curso.ProfesorId}");
+
             curso.Id = id; // Asegurarse de que el ID del objeto coincida con el ID de la URL
             var result = await _repo.ActualizarCursoAsync(curso);
             return result ? Ok("Curso actualizado") : BadRequest("Error al actualizar");
@@ -155,6 +174,15 @@ namespace BackFabrica.Controllers
         #endregion
 
         #region Endpoints Inscripciones y Notas
+        // GET: api/Educacion/inscripciones
+        [HttpGet("inscripciones")]
+        public async Task<IActionResult> GetInscripciones([FromHeader(Name = "X-DbName")] string dbName)
+        {
+            _dbContext.CurrentDb = dbName;
+            var lista = await _repo.ObtenerInscripcionesAsync();
+            return Ok(lista);
+        }
+
         // POST: api/Educacion/inscribir
         [HttpPost("inscribir")]
         public async Task<IActionResult> Inscribir([FromHeader(Name = "X-DbName")] string dbName, [FromBody] Inscripcion ins)

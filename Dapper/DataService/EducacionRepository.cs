@@ -86,9 +86,19 @@ namespace CapaDapper.DataService
 
         public async Task<bool> CrearProfesorAsync(Profesor p)
         {
-            var sql = "INSERT INTO profesores (usuario_id, nombres, especialidad, email) VALUES (@UsuarioId, @Nombres, @Especialidad, @Email)";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, p) > 0;
+            try
+            {
+                var sql = "INSERT INTO profesores (usuario_id, nombres, especialidad, email) VALUES (@UsuarioId, @Nombres, @Especialidad, @Email)";
+                using var conn = _connectionFactory.CreateConnection();
+                return await conn.ExecuteAsync(sql, p) > 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                Console.WriteLine($"Error en CrearProfesorAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Error al crear profesor: {ex.Message}", ex);
+            }
         }
 
         public async Task<bool> ActualizarProfesorAsync(Profesor p)
@@ -133,12 +143,32 @@ namespace CapaDapper.DataService
 
         public async Task<bool> ActualizarCursoAsync(Curso c)
         {
+            // DEBUG: Log valores recibidos
+            Console.WriteLine($"🔍 ActualizarCursoAsync - Valores recibidos:");
+            Console.WriteLine($"   Id: {c.Id}");
+            Console.WriteLine($"   Codigo: {c.Codigo}");
+            Console.WriteLine($"   Nombre: {c.Nombre}");
+            Console.WriteLine($"   Descripcion: {c.Descripcion}");
+            Console.WriteLine($"   Creditos: {c.Creditos}");
+            Console.WriteLine($"   ProfesorId: {c.ProfesorId} (tipo: {c.ProfesorId?.GetType().Name ?? "null"})");
+
             var sql = @"
                 UPDATE cursos
                 SET codigo = @Codigo, nombre = @Nombre, descripcion = @Descripcion, creditos = @Creditos, profesor_id = @ProfesorId
                 WHERE id = @Id";
+
             using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, c) > 0;
+            var rowsAffected = await conn.ExecuteAsync(sql, c);
+
+            Console.WriteLine($"   ✅ Filas afectadas: {rowsAffected}");
+
+            // DEBUG: Verificar inmediatamente después del UPDATE
+            var verificacion = await conn.QueryFirstOrDefaultAsync<dynamic>(
+                "SELECT * FROM cursos WHERE id = @Id", new { c.Id });
+            Console.WriteLine($"   📋 Verificación inmediata después del UPDATE:");
+            Console.WriteLine($"      profesor_id en DB: {verificacion?.profesor_id}");
+
+            return rowsAffected > 0;
         }
 
         public async Task<bool> EliminarCursoAsync(int id)
@@ -150,6 +180,32 @@ namespace CapaDapper.DataService
         #endregion
 
         #region Inscripciones
+        public async Task<IEnumerable<dynamic>> ObtenerInscripcionesAsync()
+        {
+            // Query con JOINs para mostrar información completa
+            var sql = @"
+                SELECT
+                    i.id,
+                    i.estudiante_id,
+                    i.curso_id,
+                    i.periodo,
+                    i.calificacion,
+                    i.fecha_inscripcion,
+                    e.legajo AS estudiante_legajo,
+                    e.nombres + ' ' + e.apellidos AS estudiante_nombre,
+                    c.codigo AS curso_codigo,
+                    c.nombre AS curso_nombre,
+                    p.nombres AS profesor_nombre
+                FROM inscripciones i
+                INNER JOIN estudiantes e ON i.estudiante_id = e.id
+                INNER JOIN cursos c ON i.curso_id = c.id
+                LEFT JOIN profesores p ON c.profesor_id = p.id
+                ORDER BY i.fecha_inscripcion DESC, i.id DESC";
+
+            using var conn = _connectionFactory.CreateConnection();
+            return await conn.QueryAsync<dynamic>(sql);
+        }
+
         public async Task<bool> InscribirEstudianteAsync(Inscripcion i)
         {
             // Al inscribir, la calificación empieza como NULL

@@ -210,8 +210,17 @@ namespace BackFabrica.Controllers
             var historial = await _repo.ObtenerHistorialAcademicoAsync(estudianteId);
             return Ok(historial);
         }
-        #endregion
-    }
+
+		// DELETE: api/Educacion/inscripciones/{id}
+		[HttpDelete("inscripciones/{id}")]
+		public async Task<IActionResult> EliminarInscripcion([FromHeader(Name = "X-DbName")] string dbName, int id)
+		{
+			_dbContext.CurrentDb = dbName;
+			var result = await _repo.EliminarInscripcionAsync(id);
+			return result ? Ok("Inscripción eliminada") : NotFound("Inscripción no encontrada");
+		}
+		#endregion
+	}
 
     // DTO pequeño para recibir la nota
     public class CalificarRequest

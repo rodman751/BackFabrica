@@ -12,10 +12,11 @@ namespace CapaDapper.DataService
         Task<bool> CrearEstudianteAsync(Estudiante estudiante);
         Task<bool> ActualizarEstudianteAsync(Estudiante estudiante);
         Task<bool> EliminarEstudianteAsync(int id);
-        #endregion
+		Task<bool> EliminarInscripcionAsync(int id);
+		#endregion
 
-        #region Profesores
-        Task<IEnumerable<Profesor>> ObtenerProfesoresAsync();
+		#region Profesores
+		Task<IEnumerable<Profesor>> ObtenerProfesoresAsync();
         Task<Profesor> ObtenerProfesorPorIdAsync(int id);
         Task<bool> CrearProfesorAsync(Profesor profesor);
         Task<bool> ActualizarProfesorAsync(Profesor profesor);
@@ -36,5 +37,6 @@ namespace CapaDapper.DataService
         Task<bool> CalificarEstudianteAsync(int inscripcionId, decimal nota);
         Task<IEnumerable<dynamic>> ObtenerHistorialAcademicoAsync(int estudianteId);
         #endregion
+
     }
 }

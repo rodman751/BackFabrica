@@ -40,21 +40,38 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Paciente>(sql, new { Dni = dni });
         }
 
-        public async Task<bool> CrearPacienteAsync(Paciente p)
-        {
-            // SQL Server validará que 'Antecedentes' sea un JSON válido gracias al constraint ISJSON
-            var sql = @"
-                INSERT INTO pacientes (dni, nombres, apellidos, fecha_nacimiento, telefono, grupo_sanguineo, antecedentes)
-                VALUES (@Dni, @Nombres, @Apellidos, @FechaNacimiento, @Telefono, @GrupoSanguineo, @Antecedentes)";
-            
-            using var conn = _connectionFactory.CreateConnection();
-            try {
-                return await conn.ExecuteAsync(sql, p) > 0;
-            } catch (SqlException) {
-                // Tip: Si falla, 99% probable que sea DNI duplicado o JSON mal formado
-                return false; 
-            }
-        }
+		public async Task<bool> CrearPacienteAsync(Paciente p)
+		{
+			var sql = @"
+        INSERT INTO pacientes (
+            dni, 
+            nombres, 
+            apellidos, 
+            fecha_nacimiento, 
+            telefono, 
+            grupo_sanguineo, 
+            antecedentes
+        )
+        VALUES (
+            @Dni, 
+            @Nombres, 
+            @Apellidos, 
+            @FechaNacimiento, 
+            @Telefono, 
+            @GrupoSanguineo, 
+            @Antecedentes
+        )";
+
+			using var conn = _connectionFactory.CreateConnection();
+			try
+			{
+				return await conn.ExecuteAsync(sql, p) > 0;
+			}
+			catch (SqlException)
+			{
+				return false;
+			}
+		}
 
         public async Task<bool> ActualizarHistoriaClinicaAsync(Paciente p)
         {
@@ -90,25 +107,45 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Medico>(sql, new { Id = id });
         }
 
-        public async Task<bool> CrearMedicoAsync(Medico m)
-        {
-            var sql = "INSERT INTO medicos (usuario_id, nombres, especialidad, numero_licencia, consultorio) VALUES (@UsuarioId, @Nombres, @Especialidad, @NumeroLicencia, @Consultorio)";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, m) > 0;
-        }
+		public async Task<bool> CrearMedicoAsync(Medico m)
+		{
+			var sql = @"
+        INSERT INTO medicos (
+            usuario_id, 
+            nombres, 
+            especialidad, 
+            numero_licencia, 
+            consultorio
+        ) 
+        VALUES (
+            @UsuarioId, 
+            @Nombres, 
+            @Especialidad, 
+            @NumeroLicencia, 
+            @Consultorio
+        )";
 
-        public async Task<bool> ActualizarMedicoAsync(Medico m)
-        {
-            var sql = @"
-                UPDATE medicos
-                SET usuario_id = @UsuarioId, nombres = @Nombres, especialidad = @Especialidad,
-                    numero_licencia = @NumeroLicencia, consultorio = @Consultorio
-                WHERE id = @Id";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, m) > 0;
-        }
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.ExecuteAsync(sql, m) > 0;
+		}
 
-        public async Task<bool> EliminarMedicoAsync(int id)
+		public async Task<bool> ActualizarMedicoAsync(Medico m)
+		{
+			var sql = @"
+        UPDATE medicos
+        SET 
+            usuario_id = @UsuarioId, 
+            nombres = @Nombres, 
+            especialidad = @Especialidad,
+            numero_licencia = @NumeroLicencia, 
+            consultorio = @Consultorio
+        WHERE id = @Id";
+
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.ExecuteAsync(sql, m) > 0;
+		}
+
+		public async Task<bool> EliminarMedicoAsync(int id)
         {
             var sql = "DELETE FROM medicos WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();

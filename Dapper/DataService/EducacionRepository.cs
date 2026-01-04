@@ -226,8 +226,15 @@ namespace CapaDapper.DataService
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, new { Id = inscripcionId, Nota = nota }) > 0;
         }
+		public async Task<bool> EliminarInscripcionAsync(int id)
+		{
+			// Cambiamos 'estudiantes' por 'inscripciones'
+			var sql = "DELETE FROM inscripciones WHERE id = @Id";
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
+		}
 
-        public async Task<IEnumerable<dynamic>> ObtenerHistorialAcademicoAsync(int estudianteId)
+		public async Task<IEnumerable<dynamic>> ObtenerHistorialAcademicoAsync(int estudianteId)
         {
             // Hacemos JOIN para mostrar nombres reales en lugar de IDs
             var sql = @"

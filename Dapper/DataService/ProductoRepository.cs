@@ -1,4 +1,4 @@
-using CapaDapper.Cadena;
+﻿using CapaDapper.Cadena;
 using Dapper;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -33,29 +33,69 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Producto>(sql, new { Id = id });
         }
 
-        public async Task<bool> CrearProductoAsync(Producto p)
-        {
-            var sql = @"
-        INSERT INTO productos (sku, nombre, descripcion, precio_costo, precio_venta, categoria_id, proveedor_id, especificaciones, estado)
-        VALUES (@Sku, @Nombre, @Descripcion, @Precio_Costo, @Precio_Venta, @Categoria_Id, @Proveedor_Id, @Especificaciones, @Estado)";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, p) > 0;
-        }
+		public async Task<bool> CrearProductoAsync(Producto p)
+		{
+			p.Created_At = DateTime.Now;
 
-        public async Task<bool> ActualizarProductoAsync(Producto p)
-        {
-            var sql = @"
+			var sql = @"
+        INSERT INTO productos (
+            sku, 
+            nombre, 
+            descripcion, 
+            precio_costo, 
+            precio_venta, 
+            categoria_id, 
+            proveedor_id, 
+            especificaciones, 
+            estado,
+            created_at  
+        )
+        VALUES (
+            @Sku, 
+            @Nombre, 
+            @Descripcion, 
+            @Precio_Costo, 
+            @Precio_Venta, 
+            @Categoria_Id, 
+            @Proveedor_Id, 
+            @Especificaciones, 
+            @Estado,
+            @Created_At 
+        )";
+
+			using var conn = _connectionFactory.CreateConnection();
+			try
+			{
+				return await conn.ExecuteAsync(sql, p) > 0;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Error en SQL: " + ex.Message);
+				return false;
+			}
+		}
+
+		public async Task<bool> ActualizarProductoAsync(Producto p)
+		{
+			var sql = @"
         UPDATE productos
-        SET sku = @Sku, nombre = @Nombre, descripcion = @Descripcion, 
-            precio_costo = @Precio_Costo, precio_venta = @Precio_Venta,
-            categoria_id = @Categoria_Id, proveedor_id = @Proveedor_Id,
-            especificaciones = @Especificaciones, estado = @Estado
+        SET 
+            sku = @Sku, 
+            nombre = @Nombre, 
+            descripcion = @Descripcion, 
+            precio_costo = @Precio_Costo,    -- 👈 Debe tener guion bajo
+            precio_venta = @Precio_Venta,    -- 👈 Debe tener guion bajo
+            categoria_id = @Categoria_Id,    -- 👈 Debe tener guion bajo
+            proveedor_id = @Proveedor_Id,    -- 👈 Debe tener guion bajo
+            especificaciones = @Especificaciones, 
+            estado = @Estado
         WHERE id = @Id";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, p) > 0;
-        }
 
-        public async Task<bool> EliminarProductoAsync(int id)
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.ExecuteAsync(sql, p) > 0;
+		}
+
+		public async Task<bool> EliminarProductoAsync(int id)
         {
             var sql = "DELETE FROM productos WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
@@ -85,40 +125,72 @@ namespace CapaDapper.DataService
             return await conn.ExecuteAsync(sql, c) > 0;
         }
 
-        public async Task<bool> ActualizarCategoriaAsync(Categoria c)
-        {
-            var sql = @"
-                UPDATE categorias
-                SET nombre = @Nombre, descripcion = @Descripcion, padre_id = @PadreId, activo = @Activo
-                WHERE id = @Id";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, c) > 0;
-        }
+		public async Task<bool> ActualizarCategoriaAsync(Categoria c)
+		{
+			var sql = @"
+        UPDATE categorias
+        SET 
+            nombre = @Nombre, 
+            descripcion = @Descripcion, 
+            padre_id = @Padre_Id,  -- 👈 Cambiado de @PadreId a @Padre_Id
+            activo = @Activo
+        WHERE id = @Id";
 
-        public async Task<bool> EliminarCategoriaAsync(int id)
+			using var conn = _connectionFactory.CreateConnection();
+
+			try
+			{
+				return await conn.ExecuteAsync(sql, c) > 0;
+			}
+			catch (Exception ex)
+			{
+				return false;
+			}
+		}
+
+		public async Task<bool> EliminarCategoriaAsync(int id)
         {
             var sql = "DELETE FROM categorias WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, new { Id = id }) > 0;
         }
-        #endregion
+		#endregion
 
-        #region Proveedores
-        public async Task<IEnumerable<Proveedor>> ObtenerProveedoresAsync()
-        {
-            var sql = "SELECT * FROM proveedores";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.QueryAsync<Proveedor>(sql);
-        }
+		#region Proveedores
+		public async Task<IEnumerable<Proveedor>> ObtenerProveedoresAsync()
+		{
+			var sql = @"
+        SELECT 
+            id, 
+            nombre_empresa AS NombreEmpresa, 
+            contacto_nombre AS ContactoNombre, 
+            email, 
+            telefono, 
+            sitio_web AS SitioWeb
+        FROM proveedores";
 
-        public async Task<Proveedor> ObtenerProveedorPorIdAsync(int id)
-        {
-            var sql = "SELECT * FROM proveedores WHERE id = @Id";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.QueryFirstOrDefaultAsync<Proveedor>(sql, new { Id = id });
-        }
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.QueryAsync<Proveedor>(sql);
+		}
 
-        public async Task<bool> CrearProveedorAsync(Proveedor p)
+		public async Task<Proveedor> ObtenerProveedorPorIdAsync(int id)
+		{
+			var sql = @"
+        SELECT 
+            id, 
+            nombre_empresa AS NombreEmpresa, 
+            contacto_nombre AS ContactoNombre, 
+            email, 
+            telefono, 
+            sitio_web AS SitioWeb
+        FROM proveedores 
+        WHERE id = @Id";
+
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.QueryFirstOrDefaultAsync<Proveedor>(sql, new { Id = id });
+		}
+
+		public async Task<bool> CrearProveedorAsync(Proveedor p)
         {
             var sql = "INSERT INTO proveedores (nombre_empresa, contacto_nombre, email, telefono, sitio_web) VALUES (@NombreEmpresa, @ContactoNombre, @Email, @Telefono, @SitioWeb)";
             using var conn = _connectionFactory.CreateConnection();
@@ -166,25 +238,32 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Inventario>(sql, new { Id = productoId });
         }
 
-        public async Task<bool> CrearInventarioAsync(Inventario i)
-        {
-            var sql = "INSERT INTO inventario (producto_id, stock_actual, stock_minimo, ubicacion_almacen) VALUES (@Producto_Id, @Stock_Actual, @Stock_Minimo, @Ubicacion_Almacen)";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, i) > 0;
-        }
+		public async Task<bool> CrearInventarioAsync(Inventario i)
+		{
+			var sql = @"
+        INSERT INTO inventario (producto_id, stock_actual, stock_minimo, ubicacion_almacen) 
+        VALUES (@Producto_Id, @Stock_Actual, @Stock_Minimo, @Ubicacion_Almacen)";
 
-        public async Task<bool> ActualizarInventarioAsync(Inventario inv)
-        {
-            var sql = @"
-                UPDATE inventario
-                SET producto_id = @ProductoId, stock_actual = @StockActual,
-                    stock_minimo = @StockMinimo, ubicacion_almacen = @UbicacionAlmacen
-                WHERE id = @Id";
-            using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, inv) > 0;
-        }
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.ExecuteAsync(sql, i) > 0;
+		}
 
-        public async Task<bool> AjustarStockAsync(int productoId, int cantidad, string ubicacion)
+		public async Task<bool> ActualizarInventarioAsync(Inventario inv)
+		{
+			var sql = @"
+        UPDATE inventario
+        SET 
+            producto_id = @Producto_Id, 
+            stock_actual = @Stock_Actual,
+            stock_minimo = @Stock_Minimo, 
+            ubicacion_almacen = @Ubicacion_Almacen
+        WHERE id = @Id";
+
+			using var conn = _connectionFactory.CreateConnection();
+			return await conn.ExecuteAsync(sql, inv) > 0;
+		}
+
+		public async Task<bool> AjustarStockAsync(int productoId, int cantidad, string ubicacion)
         {
             // Cantidad puede ser positiva (compra) o negativa (venta)
             var sql = @"

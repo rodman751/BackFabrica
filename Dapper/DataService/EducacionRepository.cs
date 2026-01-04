@@ -153,39 +153,20 @@ namespace CapaDapper.DataService
 
         public async Task<bool> CrearCursoAsync(Curso c)
         {
-            var sql = "INSERT INTO cursos (codigo, nombre, descripcion, creditos, profesor_id) VALUES (@Codigo, @Nombre, @Descripcion, @Creditos, @ProfesorId)";
+            var sql = "INSERT INTO cursos (codigo, nombre, descripcion, creditos, profesor_id) VALUES (@Codigo, @Nombre, @Descripcion, @Creditos, @Profesor_Id)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }
 
         public async Task<bool> ActualizarCursoAsync(Curso c)
         {
-            // DEBUG: Log valores recibidos
-            Console.WriteLine($"🔍 ActualizarCursoAsync - Valores recibidos:");
-            Console.WriteLine($"   Id: {c.Id}");
-            Console.WriteLine($"   Codigo: {c.Codigo}");
-            Console.WriteLine($"   Nombre: {c.Nombre}");
-            Console.WriteLine($"   Descripcion: {c.Descripcion}");
-            Console.WriteLine($"   Creditos: {c.Creditos}");
-            Console.WriteLine($"   ProfesorId: {c.Profesor_Id} (tipo: {c.Profesor_Id?.GetType().Name ?? "null"})");
-
             var sql = @"
-                UPDATE cursos
-                SET codigo = @Codigo, nombre = @Nombre, descripcion = @Descripcion, creditos = @Creditos, profesor_id = @ProfesorId
-                WHERE id = @Id";
+        UPDATE cursos
+        SET codigo = @Codigo, nombre = @Nombre, descripcion = @Descripcion, creditos = @Creditos, profesor_id = @Profesor_Id
+        WHERE id = @Id";
 
             using var conn = _connectionFactory.CreateConnection();
-            var rowsAffected = await conn.ExecuteAsync(sql, c);
-
-            Console.WriteLine($"   ✅ Filas afectadas: {rowsAffected}");
-
-            // DEBUG: Verificar inmediatamente después del UPDATE
-            var verificacion = await conn.QueryFirstOrDefaultAsync<dynamic>(
-                "SELECT * FROM cursos WHERE id = @Id", new { c.Id });
-            Console.WriteLine($"   📋 Verificación inmediata después del UPDATE:");
-            Console.WriteLine($"      profesor_id en DB: {verificacion?.profesor_id}");
-
-            return rowsAffected > 0;
+            return await conn.ExecuteAsync(sql, c) > 0;
         }
 
         public async Task<bool> EliminarCursoAsync(int id)
@@ -225,15 +206,17 @@ namespace CapaDapper.DataService
 
         public async Task<bool> InscribirEstudianteAsync(Inscripcion i)
         {
-            // Al inscribir, la calificación empieza como NULL
             var sql = @"
-                INSERT INTO inscripciones (estudiante_id, curso_id, periodo, calificacion) 
-                VALUES (@EstudianteId, @CursoId, @Periodo, NULL)";
+        INSERT INTO inscripciones (estudiante_id, curso_id, periodo, calificacion) 
+        VALUES (@Estudiante_Id, @Curso_Id, @Periodo, NULL)";
             using var conn = _connectionFactory.CreateConnection();
-            try {
+            try
+            {
                 return await conn.ExecuteAsync(sql, i) > 0;
-            } catch {
-                return false; // Probablemente estudiante ya inscrito en ese curso/periodo
+            }
+            catch
+            {
+                return false;
             }
         }
 

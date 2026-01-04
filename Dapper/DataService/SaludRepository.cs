@@ -137,11 +137,11 @@ namespace CapaDapper.DataService
 			return await conn.QueryFirstOrDefaultAsync<Cita>(sql, new { Id = id });
 		}
 
-		public async Task<bool> AgendarCitaAsync(Cita c)
+        public async Task<bool> AgendarCitaAsync(Cita c)
         {
             var sql = @"
-                INSERT INTO citas (paciente_id, medico_id, fecha_hora, motivo_consulta, estado)
-                VALUES (@PacienteId, @MedicoId, @FechaHora, @MotivoConsulta, 'programada')";
+        INSERT INTO citas (paciente_id, medico_id, fecha_hora, motivo_consulta, estado)
+        VALUES (@Paciente_Id, @Medico_Id, @Fecha_Hora, @Motivo_Consulta, 'programada')";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }
@@ -166,13 +166,14 @@ namespace CapaDapper.DataService
         public async Task<bool> ActualizarCitaAsync(Cita c)
         {
             var sql = @"
-                UPDATE citas
-                SET paciente_id = @PacienteId, medico_id = @MedicoId, fecha_hora = @FechaHora,
-                    motivo_consulta = @MotivoConsulta, estado = @Estado
-                WHERE id = @Id";
+        UPDATE citas
+        SET paciente_id = @Paciente_Id, medico_id = @Medico_Id, fecha_hora = @Fecha_Hora,
+            motivo_consulta = @Motivo_Consulta, estado = @Estado
+        WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }
+
 
         public async Task<bool> EliminarCitaAsync(int id)
         {
@@ -198,14 +199,13 @@ namespace CapaDapper.DataService
 
         public async Task<bool> RegistrarDiagnosticoAsync(Diagnostico d)
         {
-            // TRANSACCIÓN: 1. Insertar Diagnóstico, 2. Actualizar estado Cita a 'completada'
             var sql = @"
-                BEGIN TRANSACTION;
-                    INSERT INTO diagnosticos (cita_id, descripcion_diagnostico, tratamiento_recetado, proxima_visita)
-                    VALUES (@CitaId, @DescripcionDiagnostico, @TratamientoRecetado, @ProximaVisita);
+        BEGIN TRANSACTION;
+            INSERT INTO diagnosticos (cita_id, descripcion_diagnostico, tratamiento_recetado, proxima_visita)
+            VALUES (@Cita_Id, @Descripcion_Diagnostico, @Tratamiento_Recetado, @Proxima_Visita);
 
-                    UPDATE citas SET estado = 'completada' WHERE id = @CitaId;
-                COMMIT;";
+            UPDATE citas SET estado = 'completada' WHERE id = @Cita_Id;
+        COMMIT;";
 
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, d) > 0;
@@ -214,10 +214,10 @@ namespace CapaDapper.DataService
         public async Task<bool> ActualizarDiagnosticoAsync(Diagnostico d)
         {
             var sql = @"
-                UPDATE diagnosticos
-                SET cita_id = @CitaId, descripcion_diagnostico = @DescripcionDiagnostico,
-                    tratamiento_recetado = @TratamientoRecetado, proxima_visita = @ProximaVisita
-                WHERE id = @Id";
+        UPDATE diagnosticos
+        SET cita_id = @Cita_Id, descripcion_diagnostico = @Descripcion_Diagnostico,
+            tratamiento_recetado = @Tratamiento_Recetado, proxima_visita = @Proxima_Visita
+        WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, d) > 0;
         }

@@ -36,14 +36,8 @@ namespace CapaDapper.DataService
         public async Task<bool> CrearProductoAsync(Producto p)
         {
             var sql = @"
-                INSERT INTO productos (sku, nombre, descripcion, precio_costo, precio_venta, categoria_id, proveedor_id, especificaciones, estado)
-                VALUES (@Sku, @Nombre, @Descripcion, @PrecioCosto, @PrecioVenta, @CategoriaId, @ProveedorId, @Especificaciones, @Estado);
-                
-                -- Opcional: Crear registro vacío en inventario automáticamente al crear producto
-                DECLARE @newId INT = SCOPE_IDENTITY();
-                INSERT INTO inventario (producto_id, stock_actual, stock_minimo, ubicacion_almacen) 
-                VALUES (@newId, 0, 5, 'Sin Asignar');";
-
+        INSERT INTO productos (sku, nombre, descripcion, precio_costo, precio_venta, categoria_id, proveedor_id, especificaciones, estado)
+        VALUES (@Sku, @Nombre, @Descripcion, @Precio_Costo, @Precio_Venta, @Categoria_Id, @Proveedor_Id, @Especificaciones, @Estado)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
         }
@@ -51,11 +45,12 @@ namespace CapaDapper.DataService
         public async Task<bool> ActualizarProductoAsync(Producto p)
         {
             var sql = @"
-                UPDATE productos 
-                SET nombre = @Nombre, descripcion = @Descripcion, precio_venta = @PrecioVenta, 
-                    especificaciones = @Especificaciones, categoria_id = @CategoriaId, proveedor_id = @ProveedorId,
-                    updated_at = GETDATE()
-                WHERE id = @Id";
+        UPDATE productos
+        SET sku = @Sku, nombre = @Nombre, descripcion = @Descripcion, 
+            precio_costo = @Precio_Costo, precio_venta = @Precio_Venta,
+            categoria_id = @Categoria_Id, proveedor_id = @Proveedor_Id,
+            especificaciones = @Especificaciones, estado = @Estado
+        WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
         }
@@ -85,7 +80,7 @@ namespace CapaDapper.DataService
 
         public async Task<bool> CrearCategoriaAsync(Categoria c)
         {
-            var sql = "INSERT INTO categorias (nombre, descripcion, padre_id, activo) VALUES (@Nombre, @Descripcion, @PadreId, 1)";
+            var sql = "INSERT INTO categorias (nombre, descripcion, padre_id, activo) VALUES (@Nombre, @Descripcion, @Padre_Id, @Activo)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, c) > 0;
         }
@@ -171,13 +166,11 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Inventario>(sql, new { Id = productoId });
         }
 
-        public async Task<bool> CrearInventarioAsync(Inventario inv)
+        public async Task<bool> CrearInventarioAsync(Inventario i)
         {
-            var sql = @"
-                INSERT INTO inventario (producto_id, stock_actual, stock_minimo, ubicacion_almacen)
-                VALUES (@ProductoId, @StockActual, @StockMinimo, @UbicacionAlmacen)";
+            var sql = "INSERT INTO inventario (producto_id, stock_actual, stock_minimo, ubicacion_almacen) VALUES (@Producto_Id, @Stock_Actual, @Stock_Minimo, @Ubicacion_Almacen)";
             using var conn = _connectionFactory.CreateConnection();
-            return await conn.ExecuteAsync(sql, inv) > 0;
+            return await conn.ExecuteAsync(sql, i) > 0;
         }
 
         public async Task<bool> ActualizarInventarioAsync(Inventario inv)

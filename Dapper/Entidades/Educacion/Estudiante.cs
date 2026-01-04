@@ -4,7 +4,7 @@ namespace CapaDapper.Entidades.Educacion
     {
         public int Id { get; set; }
         public int? UsuarioId { get; set; } 
-        public string Legajo { get; set; }
+        public string Cedula { get; set; }
         public string Nombres { get; set; }
         public string Apellidos { get; set; }
         public DateTime FechaNacimiento { get; set; }

@@ -34,11 +34,11 @@ namespace BackFabrica.Controllers
             return est != null ? Ok(est) : NotFound("Estudiante no encontrado");
         }
 
-        [HttpGet("estudiantes/{legajo}")]
-        public async Task<IActionResult> GetEstudiantePorLegajo([FromHeader(Name = "X-DbName")] string dbName, string legajo)
+        [HttpGet("estudiantes/{cedula}")]
+        public async Task<IActionResult> GetEstudiantePorCedula([FromHeader(Name = "X-DbName")] string dbName, string cedula)
         {
             _dbContext.CurrentDb = dbName;
-            var est = await _repo.ObtenerEstudiantePorLegajoAsync(legajo);
+            var est = await _repo.ObtenerEstudiantePorCedulaAsync(cedula);
             return est != null ? Ok(est) : NotFound("Estudiante no encontrado");
         }
 
@@ -47,7 +47,7 @@ namespace BackFabrica.Controllers
         {
             _dbContext.CurrentDb = dbName;
             var result = await _repo.CrearEstudianteAsync(est);
-            return result ? StatusCode(201, "Estudiante matriculado") : BadRequest("Error al crear (posible legajo duplicado)");
+            return result ? StatusCode(201, "Estudiante matriculado") : BadRequest("Error al crear (posible cedula duplicada)");
         }
 
         [HttpPut("estudiantes/{id}")]

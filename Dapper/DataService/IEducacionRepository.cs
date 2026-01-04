@@ -8,7 +8,7 @@ namespace CapaDapper.DataService
         #region Estudiantes
         Task<IEnumerable<Estudiante>> ObtenerEstudiantesAsync();
         Task<Estudiante> ObtenerEstudiantePorIdAsync(int id);
-        Task<Estudiante> ObtenerEstudiantePorLegajoAsync(string legajo);
+        Task<Estudiante> ObtenerEstudiantePorCedulaAsync(string cedula);
         Task<bool> CrearEstudianteAsync(Estudiante estudiante);
         Task<bool> ActualizarEstudianteAsync(Estudiante estudiante);
         Task<bool> EliminarEstudianteAsync(int id);

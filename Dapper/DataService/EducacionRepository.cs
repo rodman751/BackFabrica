@@ -34,11 +34,11 @@ namespace CapaDapper.DataService
             return await conn.QueryFirstOrDefaultAsync<Estudiante>(sql, new { Id = id });
         }
 
-        public async Task<Estudiante> ObtenerEstudiantePorLegajoAsync(string legajo)
+        public async Task<Estudiante> ObtenerEstudiantePorCedulaAsync(string cedula)
         {
-            var sql = "SELECT * FROM estudiantes WHERE legajo = @Legajo";
+            var sql = "SELECT * FROM estudiantes WHERE legajo = @Cedula";
             using var conn = _connectionFactory.CreateConnection();
-            return await conn.QueryFirstOrDefaultAsync<Estudiante>(sql, new { Legajo = legajo });
+            return await conn.QueryFirstOrDefaultAsync<Estudiante>(sql, new { Cedula = cedula });
         }
 
         public async Task<bool> CrearEstudianteAsync(Estudiante e)
@@ -46,7 +46,7 @@ namespace CapaDapper.DataService
             // No insertamos ID ni fechas automáticas
             var sql = @"
                 INSERT INTO estudiantes (usuario_id, legajo, nombres, apellidos, fecha_nacimiento, activo)
-                VALUES (@UsuarioId, @Legajo, @Nombres, @Apellidos, @FechaNacimiento, 1)";
+                VALUES (@UsuarioId, @Cedula, @Nombres, @Apellidos, @FechaNacimiento, 1)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, e) > 0;
         }
@@ -122,14 +122,31 @@ namespace CapaDapper.DataService
         #region Cursos
         public async Task<IEnumerable<Curso>> ObtenerCursosAsync()
         {
-            var sql = "SELECT * FROM cursos";
+            var sql = @"
+                SELECT 
+                    id AS Id,
+                    codigo AS Codigo,
+                    nombre AS Nombre,
+                    descripcion AS Descripcion,
+                    creditos AS Creditos,
+                    profesor_id AS ProfesorId
+                FROM cursos";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryAsync<Curso>(sql);
         }
 
         public async Task<Curso> ObtenerCursoPorIdAsync(int id)
         {
-            var sql = "SELECT * FROM cursos WHERE id = @Id";
+            var sql = @"
+                SELECT 
+                    id AS Id,
+                    codigo AS Codigo,
+                    nombre AS Nombre,
+                    descripcion AS Descripcion,
+                    creditos AS Creditos,
+                    profesor_id AS ProfesorId
+                FROM cursos 
+                WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Curso>(sql, new { Id = id });
         }
@@ -191,7 +208,7 @@ namespace CapaDapper.DataService
                     i.periodo,
                     i.calificacion,
                     i.fecha_inscripcion,
-                    e.legajo AS estudiante_legajo,
+                    e.legajo AS estudiante_cedula,
                     e.nombres + ' ' + e.apellidos AS estudiante_nombre,
                     c.codigo AS curso_codigo,
                     c.nombre AS curso_nombre,

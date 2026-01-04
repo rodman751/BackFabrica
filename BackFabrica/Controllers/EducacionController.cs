@@ -157,7 +157,7 @@ namespace BackFabrica.Controllers
             Console.WriteLine($"   curso.Nombre: {curso.Nombre}");
             Console.WriteLine($"   curso.Descripcion: {curso.Descripcion}");
             Console.WriteLine($"   curso.Creditos: {curso.Creditos}");
-            Console.WriteLine($"   curso.ProfesorId: {curso.ProfesorId}");
+            Console.WriteLine($"   curso.ProfesorId: {curso.Profesor_Id}");
 
             curso.Id = id; // Asegurarse de que el ID del objeto coincida con el ID de la URL
             var result = await _repo.ActualizarCursoAsync(curso);

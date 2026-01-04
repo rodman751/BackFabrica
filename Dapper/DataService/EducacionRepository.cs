@@ -150,7 +150,7 @@ namespace CapaDapper.DataService
             Console.WriteLine($"   Nombre: {c.Nombre}");
             Console.WriteLine($"   Descripcion: {c.Descripcion}");
             Console.WriteLine($"   Creditos: {c.Creditos}");
-            Console.WriteLine($"   ProfesorId: {c.ProfesorId} (tipo: {c.ProfesorId?.GetType().Name ?? "null"})");
+            Console.WriteLine($"   ProfesorId: {c.Profesor_Id} (tipo: {c.Profesor_Id?.GetType().Name ?? "null"})");
 
             var sql = @"
                 UPDATE cursos

@@ -121,15 +121,7 @@ namespace CapaDapper.DataService
 		public async Task<IEnumerable<Cita>> ObtenerCitasAsync()
 		{
 			var sql = @"
-        SELECT 
-            id AS Id,
-            paciente_id AS PacienteId,
-            medico_id AS MedicoId,
-            fecha_hora AS FechaHora,
-            motivo_consulta AS MotivoConsulta,
-            estado AS Estado,
-            created_at AS CreatedAt
-        FROM citas";
+        SELECT * FROM citas";
 			using var conn = _connectionFactory.CreateConnection();
 			return await conn.QueryAsync<Cita>(sql);
 		}
@@ -138,14 +130,7 @@ namespace CapaDapper.DataService
 		public async Task<Cita> ObtenerCitaPorIdAsync(int id)
 		{
 			var sql = @"
-        SELECT 
-            id AS Id,
-            paciente_id AS PacienteId,
-            medico_id AS MedicoId,
-            fecha_hora AS FechaHora,
-            motivo_consulta AS MotivoConsulta,
-            estado AS Estado,
-            created_at AS CreatedAt
+        SELECT * 
         FROM citas 
         WHERE id = @Id";
 			using var conn = _connectionFactory.CreateConnection();

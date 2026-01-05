@@ -36,7 +36,7 @@ namespace CapaDapper.DataService
 
         public async Task<Estudiante> ObtenerEstudiantePorCedulaAsync(string cedula)
         {
-            var sql = "SELECT * FROM estudiantes WHERE legajo = @Cedula";
+            var sql = "SELECT * FROM estudiantes WHERE Cedula = @Cedula";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.QueryFirstOrDefaultAsync<Estudiante>(sql, new { Cedula = cedula });
         }
@@ -45,8 +45,8 @@ namespace CapaDapper.DataService
         {
             // No insertamos ID ni fechas automáticas
             var sql = @"
-                INSERT INTO estudiantes (usuario_id, legajo, nombres, apellidos, fecha_nacimiento, activo)
-                VALUES (@UsuarioId, @Cedula, @Nombres, @Apellidos, @FechaNacimiento, 1)";
+                INSERT INTO estudiantes (usuario_id, Cedula, nombres, apellidos, fecha_nacimiento, activo)
+                VALUES (@Usuario_Id, @Cedula, @Nombres, @Apellidos, @Fecha_Nacimiento, 1)";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, e) > 0;
         }
@@ -55,7 +55,7 @@ namespace CapaDapper.DataService
         {
             var sql = @"
                 UPDATE estudiantes
-                SET nombres = @Nombres, apellidos = @Apellidos, fecha_nacimiento = @FechaNacimiento, activo = @Activo
+                SET nombres = @Nombres, apellidos = @Apellidos, fecha_nacimiento = @Fecha_Nacimiento, activo = @Activo
                 WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, e) > 0;
@@ -189,7 +189,7 @@ namespace CapaDapper.DataService
                     i.periodo,
                     i.calificacion,
                     i.fecha_inscripcion,
-                    e.legajo AS estudiante_cedula,
+                    e.Cedula AS estudiante_cedula,
                     e.nombres + ' ' + e.apellidos AS estudiante_nombre,
                     c.codigo AS curso_codigo,
                     c.nombre AS curso_nombre,

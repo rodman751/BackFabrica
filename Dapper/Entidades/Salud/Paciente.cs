@@ -6,13 +6,13 @@ namespace CapaDapper.Entidades.Salud
         public string Dni { get; set; } // Documento de identidad único
         public string Nombres { get; set; }
         public string Apellidos { get; set; }
-        public DateTime FechaNacimiento { get; set; }
+        public DateTime Fecha_Nacimiento { get; set; }
         public string Telefono { get; set; }
-        public string GrupoSanguineo { get; set; } // Ej: O+, A-
+        public string Grupo_Sanguineo { get; set; } // Ej: O+, A-
         
         // Este string debe contener JSON válido.         
         public string Antecedentes { get; set; } 
         
-        public DateTime CreatedAt { get; set; }
+        public DateTime Created_At { get; set; }
     }
 }

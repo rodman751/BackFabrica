@@ -11,7 +11,7 @@ namespace CapaDapper.Entidades.Productos
         public int Id { get; set; }
         public string Nombre { get; set; }
         public string Descripcion { get; set; }
-        public int? PadreId { get; set; } 
+        public int? Padre_Id { get; set; } 
         public bool Activo { get; set; }
     }
 }

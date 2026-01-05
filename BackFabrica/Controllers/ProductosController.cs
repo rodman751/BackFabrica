@@ -63,13 +63,20 @@ namespace BackFabrica.Controllers
         #endregion
 
         #region Endpoints Categorias
-        // Ruta: api/Productos/categorias
         [HttpGet("categorias")]
         public async Task<IActionResult> GetCategorias([FromHeader(Name = "X-DbName")] string dbName)
         {
             _dbContext.CurrentDb = dbName;
             var lista = await _repo.ObtenerCategoriasAsync();
             return Ok(lista);
+        }
+
+        [HttpGet("categorias/{id}")]
+        public async Task<IActionResult> GetCategoriaPorId([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var categoria = await _repo.ObtenerCategoriaPorIdAsync(id);
+            return categoria != null ? Ok(categoria) : NotFound("Categoría no encontrada");
         }
 
         [HttpPost("categorias")]
@@ -79,16 +86,40 @@ namespace BackFabrica.Controllers
             var result = await _repo.CrearCategoriaAsync(cat);
             return result ? Ok("Categoría creada") : BadRequest("Error");
         }
+
+        [HttpPut("categorias/{id}")]
+        public async Task<IActionResult> PutCategoria([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Categoria categoria)
+        {
+            _dbContext.CurrentDb = dbName;
+            categoria.Id = id;
+            var result = await _repo.ActualizarCategoriaAsync(categoria);
+            return result ? Ok("Categoría actualizada") : BadRequest("Error al actualizar");
+        }
+
+        [HttpDelete("categorias/{id}")]
+        public async Task<IActionResult> DeleteCategoria([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.EliminarCategoriaAsync(id);
+            return result ? Ok("Categoría eliminada") : NotFound("Categoría no encontrada");
+        }
         #endregion
 
         #region Endpoints Proveedores
-        // Ruta: api/Productos/proveedores
         [HttpGet("proveedores")]
         public async Task<IActionResult> GetProveedores([FromHeader(Name = "X-DbName")] string dbName)
         {
             _dbContext.CurrentDb = dbName;
             var lista = await _repo.ObtenerProveedoresAsync();
             return Ok(lista);
+        }
+
+        [HttpGet("proveedores/{id}")]
+        public async Task<IActionResult> GetProveedorPorId([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var proveedor = await _repo.ObtenerProveedorPorIdAsync(id);
+            return proveedor != null ? Ok(proveedor) : NotFound("Proveedor no encontrado");
         }
 
         [HttpPost("proveedores")]
@@ -98,26 +129,81 @@ namespace BackFabrica.Controllers
             var result = await _repo.CrearProveedorAsync(prov);
             return result ? Ok("Proveedor creado") : BadRequest("Error");
         }
+
+        [HttpPut("proveedores/{id}")]
+        public async Task<IActionResult> PutProveedor([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Proveedor proveedor)
+        {
+            _dbContext.CurrentDb = dbName;
+            proveedor.Id = id;
+            var result = await _repo.ActualizarProveedorAsync(proveedor);
+            return result ? Ok("Proveedor actualizado") : BadRequest("Error al actualizar");
+        }
+
+        [HttpDelete("proveedores/{id}")]
+        public async Task<IActionResult> DeleteProveedor([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.EliminarProveedorAsync(id);
+            return result ? Ok("Proveedor eliminado") : NotFound("Proveedor no encontrado");
+        }
         #endregion
 
         #region Endpoints Inventario
-        // Ruta: api/Productos/inventario/{productoId}
-        [HttpGet("inventario/{productoId}")]
-        public async Task<IActionResult> GetInventario([FromHeader(Name = "X-DbName")] string dbName, int productoId)
+        [HttpGet("inventario")]
+        public async Task<IActionResult> GetInventarios([FromHeader(Name = "X-DbName")] string dbName)
+        {
+            _dbContext.CurrentDb = dbName;
+            var lista = await _repo.ObtenerInventariosAsync();
+            return Ok(lista);
+        }
+
+        [HttpGet("inventario/{id:int}")]
+        public async Task<IActionResult> GetInventarioPorId([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var inventario = await _repo.ObtenerInventarioPorIdAsync(id);
+            return inventario != null ? Ok(inventario) : NotFound("Inventario no encontrado");
+        }
+
+        [HttpGet("inventario/producto/{productoId}")]
+        public async Task<IActionResult> GetInventarioPorProducto([FromHeader(Name = "X-DbName")] string dbName, int productoId)
         {
             _dbContext.CurrentDb = dbName;
             var inv = await _repo.ObtenerInventarioPorProductoAsync(productoId);
             return inv != null ? Ok(inv) : NotFound("Sin registro de inventario");
         }
 
-        // Ruta: api/Productos/inventario/ajustar
+        [HttpPost("inventario")]
+        public async Task<IActionResult> PostInventario([FromHeader(Name = "X-DbName")] string dbName, [FromBody] Inventario inventario)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.CrearInventarioAsync(inventario);
+            return result ? Ok("Inventario creado") : BadRequest("Error");
+        }
+
+        [HttpPut("inventario/{id}")]
+        public async Task<IActionResult> PutInventario([FromHeader(Name = "X-DbName")] string dbName, int id, [FromBody] Inventario inventario)
+        {
+            _dbContext.CurrentDb = dbName;
+            inventario.Id = id;
+            var result = await _repo.ActualizarInventarioAsync(inventario);
+            return result ? Ok("Inventario actualizado") : BadRequest("Error al actualizar");
+        }
+
         [HttpPost("inventario/ajustar")]
         public async Task<IActionResult> AjustarStock([FromHeader(Name = "X-DbName")] string dbName, [FromBody] AjusteStockRequest request)
         {
             _dbContext.CurrentDb = dbName;
-            // request es una clase pequeñita auxiliar que definimos abajo o en otro archivo
             var result = await _repo.AjustarStockAsync(request.ProductoId, request.Cantidad, request.Ubicacion);
             return result ? Ok("Stock actualizado") : BadRequest("Error al ajustar stock");
+        }
+
+        [HttpDelete("inventario/{id}")]
+        public async Task<IActionResult> DeleteInventario([FromHeader(Name = "X-DbName")] string dbName, int id)
+        {
+            _dbContext.CurrentDb = dbName;
+            var result = await _repo.EliminarInventarioAsync(id);
+            return result ? Ok("Inventario eliminado") : NotFound("Inventario no encontrado");
         }
         #endregion
     }

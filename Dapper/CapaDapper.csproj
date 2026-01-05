@@ -12,8 +12,4 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Entidades\Estudiantes\" />
-  </ItemGroup>
-
 </Project>

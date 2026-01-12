@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Servic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CapaDapper", "Dapper\CapaDapper.csproj", "{58D2CAA4-B148-48E6-8F61-5ED0585C0B17}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenAPK", "GenAPK\GenAPK.csproj", "{CE30D2F2-A801-46DE-8D52-A7C40173C770}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{58D2CAA4-B148-48E6-8F61-5ED0585C0B17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{58D2CAA4-B148-48E6-8F61-5ED0585C0B17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{58D2CAA4-B148-48E6-8F61-5ED0585C0B17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE30D2F2-A801-46DE-8D52-A7C40173C770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE30D2F2-A801-46DE-8D52-A7C40173C770}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE30D2F2-A801-46DE-8D52-A7C40173C770}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE30D2F2-A801-46DE-8D52-A7C40173C770}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -56,9 +56,9 @@ namespace CapaDapper.DataService
             @Dni, 
             @Nombres, 
             @Apellidos, 
-            @FechaNacimiento, 
+            @Fecha_Nacimiento, 
             @Telefono, 
-            @GrupoSanguineo, 
+            @Grupo_Sanguineo, 
             @Antecedentes
         )";
 
@@ -78,7 +78,7 @@ namespace CapaDapper.DataService
             var sql = @"
                 UPDATE pacientes
                 SET nombres = @Nombres, apellidos = @Apellidos, telefono = @Telefono,
-                    grupo_sanguineo = @GrupoSanguineo, antecedentes = @Antecedentes
+                    grupo_sanguineo = @Grupo_Sanguineo, antecedentes = @Antecedentes
                 WHERE id = @Id";
             using var conn = _connectionFactory.CreateConnection();
             return await conn.ExecuteAsync(sql, p) > 0;
@@ -118,10 +118,10 @@ namespace CapaDapper.DataService
             consultorio
         ) 
         VALUES (
-            @UsuarioId, 
+            @Usuario_Id, 
             @Nombres, 
             @Especialidad, 
-            @NumeroLicencia, 
+            @Numero_Licencia, 
             @Consultorio
         )";
 
@@ -134,10 +134,10 @@ namespace CapaDapper.DataService
 			var sql = @"
         UPDATE medicos
         SET 
-            usuario_id = @UsuarioId, 
+            usuario_id = @Usuario_Id, 
             nombres = @Nombres, 
             especialidad = @Especialidad,
-            numero_licencia = @NumeroLicencia, 
+            numero_licencia = @Numero_Licencia, 
             consultorio = @Consultorio
         WHERE id = @Id";
 

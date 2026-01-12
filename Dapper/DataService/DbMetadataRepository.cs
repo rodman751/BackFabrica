@@ -1,8 +1,10 @@
-﻿using Dapper;
+﻿using CapaDapper.Dtos;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Data;
+using System.Text.Json;
 using System.Threading.Tasks;
 namespace CapaDapper.DataService
 {
@@ -64,14 +66,33 @@ namespace CapaDapper.DataService
         #endregion
 
 
-        #region CRUD PRODUCTOS
-        public async Task<bool> CreateProd()
+        public async Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request)
         {
+            using var connection = CrearConexion("master");
 
+            var parametros = new
+            {
+                p_nombre_db = request.NombreDb,
+                p_json_tablas_crud = request.JsonTablas
+            };
 
-            return false;
+            try
+            {
+                // Llamamos al SP Maestro que creamos en SQL
+                await connection.ExecuteAsync("sp_Master_CrearModuloCompleto",
+                    parametros,
+                    commandType: System.Data.CommandType.StoredProcedure);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Loguear error: ex.Message
+                return false;
+            }
         }
 
-        #endregion
+
+
     }
 }

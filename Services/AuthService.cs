@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using CapaDapper.Cadena;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Services;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,27 +12,32 @@ namespace Services
     public class AuthService : IAuthService
     {
         private readonly IConfiguration _config;
-        private readonly IAuthRepository _repository; 
+        private readonly IAuthRepository _repository;
+
 
         public AuthService(IConfiguration config, IAuthRepository repository)
         {
             _config = config;
             _repository = repository;
+ 
         }
 
         public async Task<string> LoginAsync(string usuario, string password)
         {
             // 1. Validar contra la Base de Datos (usando tu Repo con Dapper)
-            var user = await _repository.ValidarUsuario(usuario, password);
+            var user = await _repository.ValidarUserPassAsync(usuario, password);
 
-            // Si el usuario no existe, retornamos null o lanzamos excepción
-            if (user == null) return null;
+            // Si el usuario no existe o las credenciales son incorrectas
+            if (user.EsExitoso == false)
+            {
+                throw new UnauthorizedAccessException(user.Mensaje);
+            }
 
             // 2. Crear los "Claims" (La información que va DENTRO del token)
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ID del usuario
-                new Claim(ClaimTypes.Name, user.UserName),                 // Nombre de usuario
+                new Claim(ClaimTypes.NameIdentifier, user.Usuario.Id.ToString()), // ID del usuario
+                new Claim(ClaimTypes.Name, user.Usuario.Username),                 // Nombre de usuario
 
             };
 
@@ -44,7 +50,7 @@ namespace Services
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(8), // El token dura 8 horas
+                expires: DateTime.Now.AddMinutes(1),
                 signingCredentials: creds
             );
 

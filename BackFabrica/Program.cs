@@ -1,5 +1,8 @@
 using CapaDapper.Cadena;
 using CapaDapper.DataService;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,12 +15,13 @@ builder.Services.AddScoped<IProductosRepository, ProductosRepository>();
 builder.Services.AddScoped<IEducacionRepository, EducacionRepository>();
 builder.Services.AddScoped<ISaludRepository, SaludRepository>();
 
-
 builder.Services.AddScoped<IDatabaseContext, DatabaseContext>();
 builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
 
+
 builder.Services.AddScoped<DynamicCrudService>();
+
 
 
 
@@ -39,6 +43,8 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
+// ? IMPORTANTE: UseAuthentication ANTES de UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

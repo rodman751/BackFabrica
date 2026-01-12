@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CapaDapper.Dtos;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -16,6 +17,9 @@ namespace CapaDapper.DataService
 
         // 2. Se conecta a la DB específica y extrae el JSON del esquema
         Task<string> ObtenerEsquemaJsonAsync(string nombreBaseDatos);
-        Task<bool> CreateProd();
+
+        Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request);
+
+
     }
 }

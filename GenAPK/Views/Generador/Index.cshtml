@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Generador de Apps";
+    var databases = ViewBag.Databases as IEnumerable<string>;
+}
+
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3>🚀 Generador de Aplicaciones Móviles (CRUD)</h3>
+        </div>
+        <div class="card-body">
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">
+                    @TempData["Error"]
+                </div>
+            }
+
+            <p class="card-text">
+                Selecciona una base de datos de tu servidor. El sistema extraerá el esquema,
+                configurará el proyecto Flutter y compilará el APK dinámicamente.
+            </p>
+
+            <form method="post" action="@Url.Action("GenerarApk", "Generador")" onsubmit="mostrarCargando()">
+
+                <div class="form-group mb-3">
+                    <label for="dbSelector" class="form-label fw-bold">Base de Datos Origen:</label>
+                    <select class="form-control form-select" name="selectedDb" id="dbSelector" required>
+                        <option value="">-- Seleccione una Base de Datos --</option>
+                        @if (databases != null)
+                        {
+                            foreach (var db in databases)
+                            {
+                                <option value="@db">@db</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-android2"></i> Generar y Descargar APK
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; padding-top:20%;">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+    <h3 class="text-white mt-3">Compilando App con Flutter...</h3>
+    <p class="text-white">Esto puede tardar unos minutos. Por favor no cierres la ventana.</p>
+</div>
+
+<script>
+    function mostrarCargando() {
+        // Solo mostramos el spinner si se seleccionó algo
+        var selector = document.getElementById("dbSelector");
+        if(selector.value !== "") {
+            document.getElementById("loadingOverlay").style.display = "block";
+        }
+    }
+</script>

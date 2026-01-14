@@ -1,68 +1,143 @@
 ﻿@{
-    ViewData["Title"] = "Generador de Apps";
-    var databases = ViewBag.Databases as IEnumerable<string>;
+    ViewData["Title"] = "Generar App";
 }
 
-<div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h3>🚀 Generador de Aplicaciones Móviles (CRUD)</h3>
-        </div>
-        <div class="card-body">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-player/2.0.4/lottie-player.js"></script>
 
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger">
-                    @TempData["Error"]
+<div class="position-relative overflow-hidden" style="min-height: 100vh; background: linear-gradient(135deg, #f0f4ff 0%, #e2e6fa 100%); display: flex; align-items: center; justify-content: center;">
+    
+    <div class="position-absolute top-0 end-0 translate-middle-y bg-primary opacity-10 rounded-circle" style="width: 600px; height: 600px; filter: blur(120px); margin-right: -200px;"></div>
+    <div class="position-absolute bottom-0 start-0 translate-middle-x bg-info opacity-10 rounded-circle" style="width: 500px; height: 500px; filter: blur(100px); margin-left: -100px;"></div>
+
+    <div class="container position-relative z-2">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                
+                <div class="card shadow-2xl rounded-4 glass-card hover-lift-more overflow-hidden">
+                    
+                    <div class="card-body p-5">
+                        
+                        <div class="text-center mb-4 mt-2">
+                             <div class="d-flex justify-content-center mb-3">
+                                <div class="floating-animation position-relative" style="width: 180px; height: 180px;">
+                                    
+                                    <div class="position-absolute top-50 start-50 translate-middle bg-primary opacity-20 rounded-circle" style="width: 140px; height: 140px; filter: blur(30px);"></div>
+                                    
+                                    <lottie-player 
+                                        src="https://assets2.lottiefiles.com/packages/lf20_w51pcehl.json" 
+                                        background="transparent" 
+                                        speed="1" 
+                                        style="width: 100%; height: 100%; position: relative; z-index: 2;" 
+                                        loop 
+                                        autoplay>
+                                    </lottie-player>
+                                </div>
+                            </div>
+                            
+                            <h2 class="fw-bolder mb-2 text-gradient-dark">Configura tu App</h2>
+                            <p class="text-muted small">Selecciona el origen de datos para iniciar.</p>
+                        </div>
+
+                        <form method="post">
+                            <div class="mb-4">
+                                <label for="dbSelect" class="form-label fw-bold text-secondary small letter-spacing-1 mb-2">
+                                    <i class="fa fa-database text-primary me-2"></i>Base de Datos Azure
+                                </label>
+                                
+                                <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border-0 bg-light custom-input-focus">
+                                    <span class="input-group-text bg-transparent border-0 ps-3">
+                                        <i class="fa fa-server text-primary opacity-75"></i>
+                                    </span>
+                                    <select id="dbSelect" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required style="cursor: pointer; box-shadow: none;">
+                                        <option value="" selected disabled>-- Selecciona conexión --</option>
+                                        </select>
+                                    <span class="input-group-text bg-transparent border-0 pe-3 text-muted">
+                                        <i class="fa fa-chevron-down small fs-6"></i>
+                                    </span>
+                                </div>
+                                
+                                <div class="text-center mt-3">
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill px-3 py-2 fw-medium">
+                                        <i class="fa fa-lock me-1"></i> Conexión Encriptada
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg py-3 rounded-pill fw-bold shadow-glow hover-scale d-flex align-items-center justify-content-center text-white" 
+                                        style="background: linear-gradient(90deg, #2563eb 0%, #06b6d4 100%); border: none;">
+                                    <span class="me-2 letter-spacing-1">GENERAR PROYECTO</span>
+                                    <i class="fa fa-arrow-right ms-2 moving-icon"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            }
+                
+                <p class="text-center text-muted mt-4 small fw-medium opacity-75">
+                    &copy; 2026 Fabrica de Software. Motor v2.0
+                </p>
 
-            <p class="card-text">
-                Selecciona una base de datos de tu servidor. El sistema extraerá el esquema,
-                configurará el proyecto Flutter y compilará el APK dinámicamente.
-            </p>
-
-            <form method="post" action="@Url.Action("GenerarApk", "Generador")" onsubmit="mostrarCargando()">
-
-                <div class="form-group mb-3">
-                    <label for="dbSelector" class="form-label fw-bold">Base de Datos Origen:</label>
-                    <select class="form-control form-select" name="selectedDb" id="dbSelector" required>
-                        <option value="">-- Seleccione una Base de Datos --</option>
-                        @if (databases != null)
-                        {
-                            foreach (var db in databases)
-                            {
-                                <option value="@db">@db</option>
-                            }
-                        }
-                    </select>
-                </div>
-
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success btn-lg">
-                        <i class="bi bi-android2"></i> Generar y Descargar APK
-                    </button>
-                </div>
-            </form>
-
+            </div>
         </div>
     </div>
 </div>
 
-<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; padding-top:20%;">
-    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
-        <span class="visually-hidden">Cargando...</span>
-    </div>
-    <h3 class="text-white mt-3">Compilando App con Flutter...</h3>
-    <p class="text-white">Esto puede tardar unos minutos. Por favor no cierres la ventana.</p>
-</div>
-
-<script>
-    function mostrarCargando() {
-        // Solo mostramos el spinner si se seleccionó algo
-        var selector = document.getElementById("dbSelector");
-        if(selector.value !== "") {
-            document.getElementById("loadingOverlay").style.display = "block";
-        }
+<style>
+    /* TARJETA CON BORDE AZUL FINO (1px) */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid #3b82f6; 
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
     }
-</script>
+
+    /* Título Gradiente */
+    .text-gradient-dark {
+        background: linear-gradient(to right, #1e293b, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Elevación */
+    .hover-lift-more { transition: transform 0.4s ease, box-shadow 0.4s ease; }
+    .hover-lift-more:hover { 
+        transform: translateY(-8px); 
+        box-shadow: 0 35px 60px -15px rgba(37, 99, 235, 0.15) !important;
+    }
+
+    /* Input Focus */
+    .custom-input-focus { 
+        border: 1px solid transparent; 
+        transition: all 0.3s ease; 
+    }
+    .custom-input-focus:focus-within {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 4px rgba(13, 202, 240, 0.15) !important;
+        border: 1px solid #0dcaf0;
+    }
+
+    /* Botón Glow */
+    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); }
+    
+    .hover-scale { transition: all 0.3s ease; }
+    .hover-scale:hover { transform: scale(1.02); }
+    .hover-scale:hover .moving-icon { transform: translateX(5px); }
+    .moving-icon { transition: transform 0.3s ease; }
+
+    /* Animación Flotante */
+    @@keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-12px); }
+        100% { transform: translateY(0px); }
+    }
+    .floating-animation {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .letter-spacing-1 { letter-spacing: 1px; }
+    .z-2 { z-index: 2; }
+    select option { color: #333; padding: 10px; }
+</style>

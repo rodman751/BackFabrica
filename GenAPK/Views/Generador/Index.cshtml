@@ -45,16 +45,14 @@
 
                         <form id="generarForm" method="post" action="@Url.Action("GenerarApk", "Generador")">
                             <div class="mb-4">
-                                <label for="dbSelect" class="form-label fw-bold text-secondary small letter-spacing-1 mb-2">
+                                <label for="selectedDb" class="form-label fw-bold text-secondary small letter-spacing-1 mb-2">
                                     <i class="fa fa-database text-primary me-2"></i>Base de Datos Azure
                                 </label>
 
                                 <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border-0 bg-light custom-input-focus">
-                                    <span class="input-group-text bg-transparent border-0 ps-3">
-                                        <i class="fa fa-server text-primary opacity-75"></i>
-                                    </span>
-                                    <label for="dbSelector" class="form-label fw-bold">Base de Datos Origen:</label>
-                                    <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required style="cursor: pointer; box-shadow: none;">
+                                    
+                                  
+                                    <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required >
                                         <option value="">-- Seleccione una Base de Datos --</option>
                                         @if (databases != null)
                                         {
@@ -64,9 +62,7 @@
                                             }
                                         }
                                     </select>
-                                    <span class="input-group-text bg-transparent border-0 pe-3 text-muted">
-                                        <i class="fa fa-chevron-down small fs-6"></i>
-                                    </span>
+                                   
                                 </div>
 
                                 <div class="text-center mt-3">
@@ -111,6 +107,7 @@
 
             const formData = new FormData(this);
             const loadingOverlay = document.getElementById('loadingOverlay');
+            const selectedDb = document.getElementById('dbSelector').value; // ← Obtener el valor seleccionado
 
             // Mostrar spinner
             loadingOverlay.style.display = 'block';
@@ -131,7 +128,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `App_${db}_${new Date().getTime()}.apk`;
+                    a.download = `App_${selectedDb}_${new Date().getTime()}.apk`; // ← Usar la variable correcta
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);

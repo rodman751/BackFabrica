@@ -2,7 +2,7 @@
     ViewData["Title"] = "Inicio";
 }
 
-<script src="https://unpkg.com/@@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
 
 <div class="position-relative overflow-hidden hero-section" style="background: linear-gradient(135deg, #f0f4ff 0%, #e2e6fa 100%);">
     <div class="position-absolute top-0 end-0 translate-middle-y bg-primary opacity-10 rounded-circle" style="width: 600px; height: 600px; filter: blur(120px); margin-right: -200px;"></div>
@@ -104,51 +104,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Gradiente de texto más vibrante */
-    .text-gradient-primary {
-        background: linear-gradient(to right, #2563eb, #06b6d4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Sombra con brillo para el botón principal */
-    .shadow-glow {
-        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4), 0 8px 10px -6px rgba(37, 99, 235, 0.1);
-    }
-
-    /* Animación de flotación (con doble arroba @@ para corregir el error) */
-    @@keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-25px); }
-        100% { transform: translateY(0px); }
-    }
-    .floating-animation {
-        animation: float 5s ease-in-out infinite;
-    }
-
-    /* Glassmorphism más limpio */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    /* Elevación más pronunciada */
-    .hover-lift-more { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .hover-lift-more:hover { 
-        transform: translateY(-12px); 
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
-    }
-    
-    .hover-lift { transition: all 0.3s ease; }
-    .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1) !important; }
-
-    /* Utilidades */
-    .letter-spacing-1 { letter-spacing: 1.5px; }
-    .z-2 { z-index: 2; }
-    .mt-n5 { margin-top: -4rem; }
-</style>

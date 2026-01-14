@@ -1,9 +1,15 @@
 ﻿@{
     ViewData["Title"] = "Generar App";
+    var databases = ViewBag.Databases as IEnumerable<string>;
 }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-player/2.0.4/lottie-player.js"></script>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
 <div class="position-relative overflow-hidden" style="min-height: 100vh; background: linear-gradient(135deg, #f0f4ff 0%, #e2e6fa 100%); display: flex; align-items: center; justify-content: center;">
     
     <div class="position-absolute top-0 end-0 translate-middle-y bg-primary opacity-10 rounded-circle" style="width: 600px; height: 600px; filter: blur(120px); margin-right: -200px;"></div>
@@ -38,7 +44,7 @@
                             <p class="text-muted small">Selecciona el origen de datos para iniciar.</p>
                         </div>
 
-                        <form method="post">
+                        <form method="post" action="@Url.Action("GenerarApk", "Generador")" onsubmit="mostrarCargando()">
                             <div class="mb-4">
                                 <label for="dbSelect" class="form-label fw-bold text-secondary small letter-spacing-1 mb-2">
                                     <i class="fa fa-database text-primary me-2"></i>Base de Datos Azure
@@ -48,9 +54,17 @@
                                     <span class="input-group-text bg-transparent border-0 ps-3">
                                         <i class="fa fa-server text-primary opacity-75"></i>
                                     </span>
-                                    <select id="dbSelect" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required style="cursor: pointer; box-shadow: none;">
-                                        <option value="" selected disabled>-- Selecciona conexión --</option>
-                                        </select>
+                                    <label for="dbSelector" class="form-label fw-bold">Base de Datos Origen:</label>
+                                    <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required style="cursor: pointer; box-shadow: none;">
+                                            <option value="">-- Seleccione una Base de Datos --</option>
+                                            @if (databases != null)
+                                            {
+                                                foreach (var db in databases)
+                                                {
+                                                    <option value="@db">@db</option>
+                                                }
+                                            }
+                                         </select>
                                     <span class="input-group-text bg-transparent border-0 pe-3 text-muted">
                                         <i class="fa fa-chevron-down small fs-6"></i>
                                     </span>
@@ -83,61 +97,18 @@
     </div>
 </div>
 
-<style>
-    /* TARJETA CON BORDE AZUL FINO (1px) */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid #3b82f6; 
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-    }
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; padding-top:20%;">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+    <h3 class="text-white mt-3">Compilando App con Flutter...</h3>
+    <p class="text-white">Esto puede tardar unos minutos. Por favor no cierres la ventana.</p>
+</div>
 
-    /* Título Gradiente */
-    .text-gradient-dark {
-        background: linear-gradient(to right, #1e293b, #3b82f6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Elevación */
-    .hover-lift-more { transition: transform 0.4s ease, box-shadow 0.4s ease; }
-    .hover-lift-more:hover { 
-        transform: translateY(-8px); 
-        box-shadow: 0 35px 60px -15px rgba(37, 99, 235, 0.15) !important;
-    }
-
-    /* Input Focus */
-    .custom-input-focus { 
-        border: 1px solid transparent; 
-        transition: all 0.3s ease; 
-    }
-    .custom-input-focus:focus-within {
-        background-color: #fff !important;
-        box-shadow: 0 0 0 4px rgba(13, 202, 240, 0.15) !important;
-        border: 1px solid #0dcaf0;
-    }
-
-    /* Botón Glow */
-    .shadow-glow { box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); }
-    
-    .hover-scale { transition: all 0.3s ease; }
-    .hover-scale:hover { transform: scale(1.02); }
-    .hover-scale:hover .moving-icon { transform: translateX(5px); }
-    .moving-icon { transition: transform 0.3s ease; }
-
-    /* Animación Flotante */
-    @@keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-12px); }
-        100% { transform: translateY(0px); }
-    }
-    .floating-animation {
-        animation: float 6s ease-in-out infinite;
-    }
-
-    .letter-spacing-1 { letter-spacing: 1px; }
-    .z-2 { z-index: 2; }
-    select option { color: #333; padding: 10px; }
-</style>
+@section Scripts {
+    <script>
+        function mostrarCargando() {
+            document.getElementById('loadingOverlay').style.display = 'block';
+        }
+    </script>
+}

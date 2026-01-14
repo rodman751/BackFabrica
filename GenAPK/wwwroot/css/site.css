@@ -1,22 +1,185 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Gradiente de texto más vibrante */
+.text-gradient-primary {
+    background: linear-gradient(to right, #2563eb, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Sombra con brillo para el botón principal */
+.shadow-glow {
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4), 0 8px 10px -6px rgba(37, 99, 235, 0.1);
+}
+
+/* Animación de flotación (con doble arroba @@ para corregir el error) */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-25px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.floating-animation {
+    animation: float 5s ease-in-out infinite;
+}
+
+/* Glassmorphism más limpio */
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid #3b82f6;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+}
+
+/* Elevación más pronunciada */
+.hover-lift-more {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+    .hover-lift-more:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1) !important;
+    }
+
+/* Utilidades */
+.letter-spacing-1 {
+    letter-spacing: 1.5px;
+}
+
+.z-2 {
+    z-index: 2;
+}
+
+.z-3 {
+    z-index: 1030;
+}
+
+.mt-n5 {
+    margin-top: -4rem;
+}
+
+/* Título Gradiente */
+.text-gradient-dark {
+    background: linear-gradient(to right, #1e293b, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Input Focus */
+.custom-input-focus {
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+    .custom-input-focus:focus-within {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 4px rgba(13, 202, 240, 0.15) !important;
+        border: 1px solid #0dcaf0;
+    }
+
+/* Botón Hover Scale */
+.hover-scale {
+    transition: all 0.3s ease;
+}
+
+    .hover-scale:hover {
+        transform: scale(1.02);
+    }
+
+        .hover-scale:hover .moving-icon {
+            transform: translateX(5px);
+        }
+
+.moving-icon {
+    transition: transform 0.3s ease;
+}
+
+select option {
+    color: #333;
+    padding: 10px;
+}
+
+/* ESTILOS PARA EL NAVBAR */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.hover-text-primary:hover {
+    color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+/* FOOTER MEJORADO */
+footer a:hover {
+    text-decoration: underline !important;
+}
+
+/* MEJORAS RESPONSIVAS */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        padding-top: 1rem;
+    }
+
+    .nav-item {
+        text-align: center;
+    }
+}
+
+/* ICON BOX (de las tarjetas) */
+.icon-box {
+    width: 64px;
+    height: 64px;
 }

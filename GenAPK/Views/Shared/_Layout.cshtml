@@ -1,49 +1,98 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - GenAPK</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/GenAPK.styles.css" asp-append-version="true" />
+    <script src="https://unpkg.com/@@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GenAPK</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+<body class="bg-light">
+    <header class="position-sticky top-0 z-3">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom-0" style="backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95) !important;">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center fw-bold text-dark" asp-area="" asp-controller="Home" asp-action="Index" style="font-size: 1.5rem;">
+                    <div class="bg-gradient rounded-3 p-2 me-2 shadow-sm d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%); width: 45px; height: 45px;">
+                        <i class="fa fa-mobile-alt text-white fa-lg"></i>
+                    </div>
+                    <span class="text-gradient-primary">Gen</span><span class="text-dark">APK</span>
+                </a>
+
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto align-items-lg-center">
+                        <li class="nav-item mx-2">
+                            <a class="nav-link fw-semibold text-dark hover-text-primary px-3 py-2 rounded-pill transition-all" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="fa fa-home me-2"></i>Inicio
+                            </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        <li class="nav-item mx-2">
+                            <a class="nav-link fw-semibold text-dark hover-text-primary px-3 py-2 rounded-pill transition-all" asp-area="" asp-controller="Generador" asp-action="Index">
+                                <i class="fa fa-rocket me-2"></i>Generar App
+                            </a>
+                        </li>
+                        <li class="nav-item mx-2">
+                            <a class="nav-link fw-semibold text-dark hover-text-primary px-3 py-2 rounded-pill transition-all" asp-area="" asp-controller="Home" asp-action="Privacy">
+                                <i class="fa fa-shield-alt me-2"></i>Privacidad
+                            </a>
+                        </li>
+                        <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
+                            <a class="btn btn-primary btn-sm px-4 py-2 rounded-pill fw-bold shadow-sm hover-scale text-white" asp-area="" asp-controller="Generador" asp-action="Index" style="background: linear-gradient(90deg, #2563eb 0%, #06b6d4 100%); border: none;">
+                                <i class="fa fa-plus-circle me-2"></i>Crear Proyecto
+                            </a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
+    <main role="main" class="flex-grow-1" style="min-height: calc(100vh - 180px);">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-white border-top mt-5 py-4">
         <div class="container">
-            &copy; 2026 - GenAPK - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start">
+                        <div class="bg-gradient rounded-3 p-2 me-3 shadow-sm d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%); width: 40px; height: 40px;">
+                            <i class="fa fa-mobile-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">GenAPK</h6>
+                            <small class="text-muted">Motor Generador v2.0</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-md-end gap-3">
+                        <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-muted text-decoration-none hover-text-primary transition-all fw-medium small">
+                            <i class="fa fa-shield-alt me-1"></i>Política de Privacidad
+                        </a>
+                        <span class="text-muted d-none d-md-inline">|</span>
+                        <a href="https://github.com/rodman751/BackFabrica" target="_blank" class="text-muted text-decoration-none hover-text-primary transition-all fw-medium small">
+                            <i class="fab fa-github me-1"></i>GitHub
+                        </a>
+                        <span class="text-muted d-none d-md-inline">|</span>
+                        <small class="text-muted fw-medium">&copy; 2026 Fábrica de Software</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

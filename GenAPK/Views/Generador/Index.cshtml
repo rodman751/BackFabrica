@@ -131,7 +131,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `App_${new Date().getTime()}.apk`;
+                a.download = `App_${db}_${new Date().getTime()}.apk`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);

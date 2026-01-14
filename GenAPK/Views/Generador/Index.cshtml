@@ -11,65 +11,64 @@
     </div>
 }
 <div class="position-relative overflow-hidden" style="min-height: 100vh; background: linear-gradient(135deg, #f0f4ff 0%, #e2e6fa 100%); display: flex; align-items: center; justify-content: center;">
-    
+
     <div class="position-absolute top-0 end-0 translate-middle-y bg-primary opacity-10 rounded-circle" style="width: 600px; height: 600px; filter: blur(120px); margin-right: -200px;"></div>
     <div class="position-absolute bottom-0 start-0 translate-middle-x bg-info opacity-10 rounded-circle" style="width: 500px; height: 500px; filter: blur(100px); margin-left: -100px;"></div>
 
     <div class="container position-relative z-2">
         <div class="row justify-content-center">
             <div class="col-lg-5 col-md-7">
-                
+
                 <div class="card shadow-2xl rounded-4 glass-card hover-lift-more overflow-hidden">
-                    
+
                     <div class="card-body p-5">
-                        
+
                         <div class="text-center mb-4 mt-2">
-                             <div class="d-flex justify-content-center mb-3">
+                            <div class="d-flex justify-content-center mb-3">
                                 <div class="floating-animation position-relative" style="width: 180px; height: 180px;">
-                                    
+
                                     <div class="position-absolute top-50 start-50 translate-middle bg-primary opacity-20 rounded-circle" style="width: 140px; height: 140px; filter: blur(30px);"></div>
-                                    
-                                    <lottie-player 
-                                        src="https://assets2.lottiefiles.com/packages/lf20_w51pcehl.json" 
-                                        background="transparent" 
-                                        speed="1" 
-                                        style="width: 100%; height: 100%; position: relative; z-index: 2;" 
-                                        loop 
-                                        autoplay>
+
+                                    <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_w51pcehl.json"
+                                                   background="transparent"
+                                                   speed="1"
+                                                   style="width: 100%; height: 100%; position: relative; z-index: 2;"
+                                                   loop
+                                                   autoplay>
                                     </lottie-player>
                                 </div>
                             </div>
-                            
+
                             <h2 class="fw-bolder mb-2 text-gradient-dark">Configura tu App</h2>
                             <p class="text-muted small">Selecciona el origen de datos para iniciar.</p>
                         </div>
 
-                        <form method="post" action="@Url.Action("GenerarApk", "Generador")" onsubmit="mostrarCargando()">
+                        <form id="generarForm" method="post" action="@Url.Action("GenerarApk", "Generador")">
                             <div class="mb-4">
                                 <label for="dbSelect" class="form-label fw-bold text-secondary small letter-spacing-1 mb-2">
                                     <i class="fa fa-database text-primary me-2"></i>Base de Datos Azure
                                 </label>
-                                
+
                                 <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border-0 bg-light custom-input-focus">
                                     <span class="input-group-text bg-transparent border-0 ps-3">
                                         <i class="fa fa-server text-primary opacity-75"></i>
                                     </span>
                                     <label for="dbSelector" class="form-label fw-bold">Base de Datos Origen:</label>
                                     <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required style="cursor: pointer; box-shadow: none;">
-                                            <option value="">-- Seleccione una Base de Datos --</option>
-                                            @if (databases != null)
+                                        <option value="">-- Seleccione una Base de Datos --</option>
+                                        @if (databases != null)
+                                        {
+                                            foreach (var db in databases)
                                             {
-                                                foreach (var db in databases)
-                                                {
-                                                    <option value="@db">@db</option>
-                                                }
+                                                <option value="@db">@db</option>
                                             }
-                                         </select>
+                                        }
+                                    </select>
                                     <span class="input-group-text bg-transparent border-0 pe-3 text-muted">
                                         <i class="fa fa-chevron-down small fs-6"></i>
                                     </span>
                                 </div>
-                                
+
                                 <div class="text-center mt-3">
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill px-3 py-2 fw-medium">
                                         <i class="fa fa-lock me-1"></i> Conexión Encriptada
@@ -78,7 +77,7 @@
                             </div>
 
                             <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg py-3 rounded-pill fw-bold shadow-glow hover-scale d-flex align-items-center justify-content-center text-white" 
+                                <button type="submit" class="btn btn-primary btn-lg py-3 rounded-pill fw-bold shadow-glow hover-scale d-flex align-items-center justify-content-center text-white"
                                         style="background: linear-gradient(90deg, #2563eb 0%, #06b6d4 100%); border: none;">
                                     <span class="me-2 letter-spacing-1">GENERAR PROYECTO</span>
                                     <i class="fa fa-arrow-right ms-2 moving-icon"></i>
@@ -87,7 +86,7 @@
                         </form>
                     </div>
                 </div>
-                
+
                 <p class="text-center text-muted mt-4 small fw-medium opacity-75">
                     &copy; 2026 Fabrica de Software. Motor v2.0
                 </p>
@@ -107,8 +106,47 @@
 
 @section Scripts {
     <script>
-        function mostrarCargando() {
-            document.getElementById('loadingOverlay').style.display = 'block';
-        }
+        document.getElementById('generarForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevenir envío normal
+
+            const formData = new FormData(this);
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            // Mostrar spinner
+            loadingOverlay.style.display = 'block';
+
+            // Hacer petición AJAX
+            fetch('@Url.Action("GenerarApk", "Generador")', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la generación del APK');
+                }
+                return response.blob(); // Obtener el archivo como blob
+            })
+            .then(blob => {
+                // Crear enlace de descarga
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `App_${new Date().getTime()}.apk`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // CERRAR SPINNER
+                loadingOverlay.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al generar el APK. Por favor intenta nuevamente.');
+
+                // CERRAR SPINNER en caso de error
+                loadingOverlay.style.display = 'none';
+            });
+        });
     </script>
 }

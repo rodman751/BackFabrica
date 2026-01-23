@@ -1,54 +1,51 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Services
 {
     public class ApkBuilderService
     {
-        // Ruta base donde vive tu proyecto Flutter (Recomiendo mover esto a appsettings.json)
-        private readonly string _flutterProjectPath = @"C:\Pruebas\mi_plantilla";
+        private readonly string _flutterProjectPath = @"D:\Desarrollo\Flutter\herramienta_case\herramienta_case";
 
         public async Task<string> GenerarApkAsync(string dbName, string jsonSchema)
         {
-            // 1. DEFINIR RUTAS
-            string pathConfigFile = Path.Combine(_flutterProjectPath, "lib", "config", "app_config.dart");
+            string pathConfigFile = Path.Combine(_flutterProjectPath, "lib", "core", "config", "app_build_config.dart");
 
-            // 2. LEER Y MODIFICAR EL CÓDIGO DART
             if (!File.Exists(pathConfigFile))
-                throw new FileNotFoundException("No se encontró el archivo de configuración de Flutter.");
+                throw new FileNotFoundException($"No se encontró el archivo de configuración en: {pathConfigFile}");
 
             string contenidoOriginal = await File.ReadAllTextAsync(pathConfigFile);
 
-            // Hacemos el reemplazo. 
-            // IMPORTANTE: Aseguramos que el JSON no rompa el string de Dart.
-            // En un entorno productivo real, a veces es mejor pasar esto en Base64 para evitar problemas con comillas.
-            string nuevoContenido = contenidoOriginal
-                .Replace("{{DB_NAME_PLACEHOLDER}}", dbName)
-                .Replace("{{SCHEMA_JSON_PLACEHOLDER}}", jsonSchema);
+            try
+            {
+                string nuevoContenido = contenidoOriginal
+                    .Replace("{{DB_NAME_PLACEHOLDER}}", dbName)
+                    .Replace("{{SCHEMA_JSON_PLACEHOLDER}}", jsonSchema);
 
-            // Sobrescribimos el archivo (OJO: Esto afecta a todos los usuarios si es concurrente)
-            await File.WriteAllTextAsync(pathConfigFile, nuevoContenido);
+                await File.WriteAllTextAsync(pathConfigFile, nuevoContenido);
 
-            // 3. COMPILAR EL APK
-            // Ejecutamos el proceso en segundo plano
-            string outputApk = await RunFlutterBuild();
-
-            return outputApk;
+                // OPCIÓN 1: Sin flutter clean (mucho más rápido)
+                return await RunFlutterBuild(useClean: false);
+            }
+            finally
+            {
+                await File.WriteAllTextAsync(pathConfigFile, contenidoOriginal);
+            }
         }
 
-        private async Task<string> RunFlutterBuild()
+        private async Task<string> RunFlutterBuild(bool useClean = false)
         {
-            var tcs = new TaskCompletionSource<string>();
+            // Comando optimizado: solo clean cuando sea necesario
+            string command = useClean
+                ? "/c call flutter clean & call flutter build apk --release"
+                : "/c call flutter build apk --release --no-tree-shake-icons"; // Más rápido
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
                 FileName = "cmd.exe",
-                // --release es mejor para producción, --debug es más rápido para pruebas
-                Arguments = "/c flutter build apk --debug",
+                Arguments = command,
                 WorkingDirectory = _flutterProjectPath,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -61,24 +58,24 @@ namespace Services
                 proc.StartInfo = psi;
                 proc.Start();
 
-                // Leer salida para logs (opcional pero recomendado)
-                string output = await proc.StandardOutput.ReadToEndAsync();
-                string error = await proc.StandardError.ReadToEndAsync();
+                var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+                var stderrTask = proc.StandardError.ReadToEndAsync();
 
                 await proc.WaitForExitAsync();
 
+                string stdOut = await stdoutTask;
+                string error = await stderrTask;
+
                 if (proc.ExitCode == 0)
                 {
-                    // Ruta estándar de salida de Flutter
-                    string apkPath = Path.Combine(_flutterProjectPath, @"build\app\outputs\flutter-apk\app-debug.apk");
+                    string apkPath = Path.Combine(_flutterProjectPath, @"build\app\outputs\flutter-apk\app-release.apk");
                     if (File.Exists(apkPath))
                     {
                         return apkPath;
                     }
                 }
 
-                // Si falló, lanzamos error con el log de Flutter
-                throw new Exception($"Error compilando Flutter: {error}");
+                throw new Exception($"Error compilando Flutter. ExitCode: {proc.ExitCode}.\nError: {error}\nLog: {stdOut}");
             }
         }
     }

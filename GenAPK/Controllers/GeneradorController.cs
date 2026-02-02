@@ -63,7 +63,15 @@ namespace GenAPK.Controllers
 
                 // 2. Llamar al servicio que modifica Flutter y Compila (definido en el paso anterior)
                 // Esto puede tardar entre 30seg y 2min dependiendo de tu PC
-                string rutaApkGenerado = await _apkService.GenerarApkAsync(selectedDb, jsonSchema);
+                var buildResult = await _apkService.GenerarApkAsync(selectedDb, jsonSchema);
+
+                if (buildResult == null || string.IsNullOrEmpty(buildResult.ApkPath))
+                {
+                    TempData["Error"] = "No se pudo generar el APK o la ruta está vacía.";
+                    return RedirectToAction("Index");
+                }
+
+                string rutaApkGenerado = buildResult.ApkPath;
 
                 // 3. Leer el archivo y forzar la descarga en el navegador
                 byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaApkGenerado);

@@ -1,0 +1,41 @@
+﻿@{
+    ViewData["Title"] = "Descargar Archivos";
+}
+
+<div class="container mt-5">
+    <div class="alert alert-success">
+        <h4>✅ Generación completada</h4>
+        <p>Los archivos han sido generados correctamente para: <strong>@ViewBag.DbName</strong></p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📱 Aplicación Android</h5>
+                    <p class="card-text">Descarga el APK generado</p>
+                    <a href="@Url.Action("DescargarApk", "Generador")" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Descargar APK
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📦 Código Fuente</h5>
+                    <p class="card-text">Descarga el proyecto .NET completo</p>
+                    <a href="@Url.Action("DescargarZip", "Generador")" class="btn btn-success">
+                        <i class="fas fa-file-archive"></i> Descargar ZIP
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="@Url.Action("Index", "Generador")" class="btn btn-secondary">
+            Generar otra aplicación
+        </a>
+    </div>
+</div>

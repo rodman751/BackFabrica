@@ -51,8 +51,6 @@ namespace GenAPK.Controllers
 
             try
             {
-                // 1. Obtener el Esquema JSON usando tu lógica actual
-                // (Dapper se conecta y trae el JSON de esa DB)
                 var jsonSchema = await _repository.ObtenerEsquemaJsonAsync(selectedDb);
 
                 if (string.IsNullOrEmpty(jsonSchema))
@@ -61,8 +59,6 @@ namespace GenAPK.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // 2. Llamar al servicio que modifica Flutter y Compila (definido en el paso anterior)
-                // Esto puede tardar entre 30seg y 2min dependiendo de tu PC
                 var buildResult = await _apkService.GenerarApkAsync(selectedDb, jsonSchema);
 
                 if (buildResult == null || string.IsNullOrEmpty(buildResult.ApkPath))
@@ -71,20 +67,76 @@ namespace GenAPK.Controllers
                     return RedirectToAction("Index");
                 }
 
-                string rutaApkGenerado = buildResult.ApkPath;
+                // Guardar las rutas en TempData para permitir descargas posteriores
+                TempData["ApkPath"] = buildResult.ApkPath;
+                TempData["ZipPath"] = buildResult.SourceCodeZipPath;
+                TempData["DbName"] = selectedDb;
+                TempData["Success"] = "APK y código fuente generados correctamente.";
 
-                // 3. Leer el archivo y forzar la descarga en el navegador
-                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaApkGenerado);
-                string nombreArchivo = $"App_{selectedDb}_{DateTime.Now:yyyyMMdd}.apk";
-
-                return File(fileBytes, "application/vnd.android.package-archive", nombreArchivo);
+                return RedirectToAction("Descargar");
             }
             catch (Exception ex)
             {
-                // Si algo falla (ej: error de compilación de Flutter) volvemos a la vista con el error
                 TempData["Error"] = $"Error en la generación: {ex.Message}";
                 return RedirectToAction("Index");
             }
+        }
+
+        // Nueva acción para mostrar opciones de descarga
+        public IActionResult Descargar()
+        {
+            if (TempData["ApkPath"] == null)
+            {
+                TempData["Error"] = "No hay archivos disponibles para descargar.";
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.ApkPath = TempData["ApkPath"];
+            ViewBag.ZipPath = TempData["ZipPath"];
+            ViewBag.DbName = TempData["DbName"];
+            
+            // Mantener en TempData para las descargas
+            TempData.Keep();
+            
+            return View();
+        }
+
+        // Acción para descargar el APK
+        [HttpGet]
+        public async Task<IActionResult> DescargarApk()
+        {
+            string rutaApk = TempData["ApkPath"]?.ToString();
+            string dbName = TempData["DbName"]?.ToString();
+            
+            if (string.IsNullOrEmpty(rutaApk) || !System.IO.File.Exists(rutaApk))
+            {
+                TempData["Error"] = "El archivo APK no está disponible.";
+                return RedirectToAction("Index");
+            }
+
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaApk);
+            string nombreArchivo = $"App_{dbName}_{DateTime.Now:yyyyMMdd}.apk";
+
+            return File(fileBytes, "application/vnd.android.package-archive", nombreArchivo);
+        }
+
+        // Acción para descargar el ZIP del código fuente
+        [HttpGet]
+        public async Task<IActionResult> DescargarZip()
+        {
+            string rutaZip = TempData["ZipPath"]?.ToString();
+            string dbName = TempData["DbName"]?.ToString();
+            
+            if (string.IsNullOrEmpty(rutaZip) || !System.IO.File.Exists(rutaZip))
+            {
+                TempData["Error"] = "El archivo ZIP no está disponible.";
+                return RedirectToAction("Index");
+            }
+
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaZip);
+            string nombreArchivo = Path.GetFileName(rutaZip);
+
+            return File(fileBytes, "application/zip", nombreArchivo);
         }
     }
 }

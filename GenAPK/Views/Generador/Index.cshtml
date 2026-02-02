@@ -50,9 +50,9 @@
                                 </label>
 
                                 <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border-0 bg-light custom-input-focus">
-                                    
-                                  
-                                    <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required >
+
+
+                                    <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required>
                                         <option value="">-- Seleccione una Base de Datos --</option>
                                         @if (databases != null)
                                         {
@@ -62,7 +62,7 @@
                                             }
                                         }
                                     </select>
-                                   
+
                                 </div>
 
                                 <div class="text-center mt-3">
@@ -103,45 +103,36 @@
 @section Scripts {
     <script>
         document.getElementById('generarForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevenir envío normal
+            e.preventDefault();
 
             const formData = new FormData(this);
             const loadingOverlay = document.getElementById('loadingOverlay');
-            const selectedDb = document.getElementById('dbSelector').value; // ← Obtener el valor seleccionado
 
             // Mostrar spinner
             loadingOverlay.style.display = 'block';
 
-            // Hacer petición AJAX
+            // Hacer petición AJAX que SIGUE el redirect
             fetch('@Url.Action("GenerarApk", "Generador")', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                redirect: 'follow' // Seguir redirecciones automáticamente
             })
             .then(response => {
-                if (!response.ok) {
+                loadingOverlay.style.display = 'none';
+
+                // Si la respuesta es un redirect (status 302), seguirlo
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else if (response.ok) {
+                    // Si por alguna razón no redirigió, ir manualmente
+                    window.location.href = '@Url.Action("Descargar", "Generador")';
+                } else {
                     throw new Error('Error en la generación del APK');
                 }
-                return response.blob(); // Obtener el archivo como blob
-            })
-            .then(blob => {
-                // Crear enlace de descarga
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                    a.download = `App_${selectedDb}_${new Date().getTime()}.apk`; // ← Usar la variable correcta
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                // CERRAR SPINNER
-                loadingOverlay.style.display = 'none';
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error al generar el APK. Por favor intenta nuevamente.');
-
-                // CERRAR SPINNER en caso de error
                 loadingOverlay.style.display = 'none';
             });
         });

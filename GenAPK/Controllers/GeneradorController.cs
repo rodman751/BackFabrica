@@ -8,27 +8,20 @@ namespace GenAPK.Controllers
     public class GeneradorController : Controller
     {
         private readonly IDbMetadataRepository _repository;
-        private readonly ApkBuilderService _apkService; // El servicio que compila Flutter
+        private readonly ApkBuilderService _apkService;
 
-        // Inyectamos ambos servicios
         public GeneradorController(IDbMetadataRepository repository, ApkBuilderService apkService)
         {
             _repository = repository;
             _apkService = apkService;
         }
 
-        // GET: /Generador/Index
-        // Carga la vista con el Dropdown de bases de datos
         public async Task<IActionResult> Index()
         {
             try
             {
-                // 1. Usamos tu método existente para traer los nombres
                 var dbs = await _repository.ObtenerNombresDeBasesDeDatosAsync();
-
-                // Pasamos la lista a la vista mediante ViewBag
                 ViewBag.Databases = dbs;
-
                 return View();
             }
             catch (Exception ex)
@@ -38,8 +31,6 @@ namespace GenAPK.Controllers
             }
         }
 
-        // POST: /Generador/GenerarApk
-        // Recibe el nombre de la DB seleccionada en el form
         [HttpPost]
         public async Task<IActionResult> GenerarApk(string selectedDb)
         {
@@ -51,8 +42,6 @@ namespace GenAPK.Controllers
 
             try
             {
-                // 1. Obtener el Esquema JSON usando tu lógica actual
-                // (Dapper se conecta y trae el JSON de esa DB)
                 var jsonSchema = await _repository.ObtenerEsquemaJsonAsync(selectedDb);
 
                 if (string.IsNullOrEmpty(jsonSchema))
@@ -61,22 +50,90 @@ namespace GenAPK.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // 2. Llamar al servicio que modifica Flutter y Compila (definido en el paso anterior)
-                // Esto puede tardar entre 30seg y 2min dependiendo de tu PC
-                string rutaApkGenerado = await _apkService.GenerarApkAsync(selectedDb, jsonSchema);
+                var buildResult = await _apkService.GenerarApkAsync(selectedDb, jsonSchema);
 
-                // 3. Leer el archivo y forzar la descarga en el navegador
-                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaApkGenerado);
-                string nombreArchivo = $"App_{selectedDb}_{DateTime.Now:yyyyMMdd}.apk";
+                if (buildResult == null || string.IsNullOrEmpty(buildResult.ApkPath))
+                {
+                    TempData["Error"] = "No se pudo generar el APK o la ruta está vacía.";
+                    return RedirectToAction("Index");
+                }
 
-                return File(fileBytes, "application/vnd.android.package-archive", nombreArchivo);
+                // Guardar en TempData con persistencia mejorada
+                TempData["ApkPath"] = buildResult.ApkPath;
+                TempData["ZipPath"] = buildResult.SourceCodeZipPath;
+                TempData["DbName"] = selectedDb;
+                TempData["Success"] = "APK y código fuente generados correctamente.";
+
+                // IMPORTANTE: Redirigir sin devolver archivo
+                return RedirectToAction("Descargar");
             }
             catch (Exception ex)
             {
-                // Si algo falla (ej: error de compilación de Flutter) volvemos a la vista con el error
                 TempData["Error"] = $"Error en la generación: {ex.Message}";
                 return RedirectToAction("Index");
             }
+        }
+
+        public IActionResult Descargar()
+        {
+            // Peek en lugar de leer directamente para no consumir
+            if (TempData.Peek("ApkPath") == null)
+            {
+                TempData["Error"] = "No hay archivos disponibles para descargar.";
+                return RedirectToAction("Index");
+            }
+
+            // Usar Peek para no consumir los valores
+            ViewBag.ApkPath = TempData.Peek("ApkPath");
+            ViewBag.ZipPath = TempData.Peek("ZipPath");
+            ViewBag.DbName = TempData.Peek("DbName");
+            ViewBag.Success = TempData.Peek("Success");
+
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DescargarApk()
+        {
+            // Usar Peek para no consumir el valor
+            string rutaApk = TempData.Peek("ApkPath")?.ToString();
+            string dbName = TempData.Peek("DbName")?.ToString();
+
+            if (string.IsNullOrEmpty(rutaApk) || !System.IO.File.Exists(rutaApk))
+            {
+                TempData["Error"] = "El archivo APK no está disponible.";
+                return RedirectToAction("Index");
+            }
+
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaApk);
+            string nombreArchivo = $"App_{dbName}_{DateTime.Now:yyyyMMdd}.apk";
+
+            // Mantener TempData para permitir múltiples descargas
+            TempData.Keep();
+
+            return File(fileBytes, "application/vnd.android.package-archive", nombreArchivo);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DescargarZip()
+        {
+            // Usar Peek para no consumir el valor
+            string rutaZip = TempData.Peek("ZipPath")?.ToString();
+            string dbName = TempData.Peek("DbName")?.ToString();
+
+            if (string.IsNullOrEmpty(rutaZip) || !System.IO.File.Exists(rutaZip))
+            {
+                TempData["Error"] = "El archivo ZIP no está disponible.";
+                return RedirectToAction("Index");
+            }
+
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaZip);
+            string nombreArchivo = Path.GetFileName(rutaZip);
+
+            // Mantener TempData para permitir múltiples descargas
+            TempData.Keep();
+
+            return File(fileBytes, "application/zip", nombreArchivo);
         }
     }
 }

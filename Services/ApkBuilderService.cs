@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 
 namespace Services
@@ -9,7 +10,7 @@ namespace Services
     {
         private readonly string _flutterProjectPath = @"D:\Desarrollo\Flutter\herramienta_case\herramienta_case";
 
-        public async Task<string> GenerarApkAsync(string dbName, string jsonSchema)
+        public async Task<ApkBuildResult> GenerarApkAsync(string dbName, string jsonSchema)
         {
             string pathConfigFile = Path.Combine(_flutterProjectPath, "lib", "core", "config", "app_build_config.dart");
 
@@ -26,12 +27,77 @@ namespace Services
 
                 await File.WriteAllTextAsync(pathConfigFile, nuevoContenido);
 
-                // OPCIÓN 1: Sin flutter clean (mucho más rápido)
-                return await RunFlutterBuild(useClean: false);
+                // Generar APK
+                string apkPath = await RunFlutterBuild(useClean: false);
+
+                // Exportar código fuente de la solución .NET
+                string zipPath = await ExportarCodigoFuenteAsync(dbName);
+
+                return new ApkBuildResult
+                {
+                    ApkPath = apkPath,
+                    SourceCodeZipPath = zipPath
+                };
             }
             finally
             {
                 await File.WriteAllTextAsync(pathConfigFile, contenidoOriginal);
+            }
+        }
+
+        private async Task<string> ExportarCodigoFuenteAsync(string dbName)
+        {
+            // Obtener la ruta raíz de la solución (ajusta según tu estructura)
+            string solutionPath = Directory.GetCurrentDirectory();
+            string parentDirectory = Directory.GetParent(solutionPath)?.FullName ?? solutionPath;
+
+            // Crear carpeta temporal para los exports
+            string exportFolder = Path.Combine(Path.GetTempPath(), "BackFabrica_Exports");
+            Directory.CreateDirectory(exportFolder);
+
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string zipFileName = $"BackFabrica_{dbName}_{timestamp}.zip";
+            string zipPath = Path.Combine(exportFolder, zipFileName);
+
+            await Task.Run(() =>
+            {
+                using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+                {
+                    // Agregar todos los archivos de la solución, excluyendo carpetas innecesarias
+                    AgregarArchivosAlZip(parentDirectory, archive, parentDirectory);
+                }
+            });
+
+            return zipPath;
+        }
+
+        private void AgregarArchivosAlZip(string directoryPath, ZipArchive archive, string baseDirectory)
+        {
+            // Carpetas y archivos a excluir
+            string[] excludedFolders = { "bin", "obj", ".vs", ".git", "node_modules", "packages" };
+            string[] excludedFiles = { ".suo", ".user" };
+
+            foreach (string filePath in Directory.GetFiles(directoryPath))
+            {
+                string fileName = Path.GetFileName(filePath);
+
+                // Excluir archivos temporales
+                if (Array.Exists(excludedFiles, ext => fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                string entryName = Path.GetRelativePath(baseDirectory, filePath);
+                archive.CreateEntryFromFile(filePath, entryName, CompressionLevel.Optimal);
+            }
+
+            foreach (string subdirectory in Directory.GetDirectories(directoryPath))
+            {
+                string folderName = Path.GetFileName(subdirectory);
+
+                // Excluir carpetas de build y temporales
+                if (Array.Exists(excludedFolders, folder => folder.Equals(folderName, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                AgregarArchivosAlZip(subdirectory, archive, baseDirectory);
             }
         }
 
@@ -78,5 +144,11 @@ namespace Services
                 throw new Exception($"Error compilando Flutter. ExitCode: {proc.ExitCode}.\nError: {error}\nLog: {stdOut}");
             }
         }
+    }
+
+    public class ApkBuildResult
+    {
+        public string ApkPath { get; set; }
+        public string SourceCodeZipPath { get; set; }
     }
 }

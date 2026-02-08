@@ -16,18 +16,40 @@ namespace GenAPK.Controllers
             _apkService = apkService;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
+        {
+            // Carga inmediata de la vista, los datos se cargarán vía AJAX
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDatabases()
         {
             try
             {
                 var dbs = await _repository.ObtenerNombresDeBasesDeDatosAsync();
-                ViewBag.Databases = dbs;
-                return View();
+                return Json(new { success = true, databases = dbs });
             }
             catch (Exception ex)
             {
-                ViewBag.Error = "Error al cargar bases de datos: " + ex.Message;
-                return View();
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetJson(string selectedDb)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(selectedDb))
+                    return BadRequest("Debes especificar una base de datos (?selectedDb=Nombre)");
+
+                var jsonSchema = await _repository.ObtenerEsquemaJsonAsync(selectedDb);
+                return Content(jsonSchema, "application/json");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
             }
         }
 

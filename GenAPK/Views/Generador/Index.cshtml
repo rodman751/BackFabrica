@@ -1,6 +1,5 @@
 ﻿@{
     ViewData["Title"] = "Generar App";
-    var databases = ViewBag.Databases as IEnumerable<string>;
 }
 
 
@@ -19,7 +18,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-5 col-md-7">
 
-                <div class="card shadow-2xl rounded-4 glass-card hover-lift-more overflow-hidden">
+                <div class="card shadow-2xl rounded-4 glass-card hover-lift-more overflow-hidden h-100 border-0" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px);">
 
                     <div class="card-body p-5">
 
@@ -53,14 +52,7 @@
 
 
                                     <select name="selectedDb" id="dbSelector" class="form-select border-0 bg-transparent py-3 fw-medium text-dark" required>
-                                        <option value="">-- Seleccione una Base de Datos --</option>
-                                        @if (databases != null)
-                                        {
-                                            foreach (var db in databases)
-                                            {
-                                                <option value="@db">@db</option>
-                                            }
-                                        }
+                                        <option value="">-- Selecciona base de datos --</option>
                                     </select>
 
                                 </div>
@@ -73,7 +65,7 @@
                             </div>
 
                             <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg py-3 rounded-pill fw-bold shadow-glow hover-scale d-flex align-items-center justify-content-center text-white"
+                                <button type="submit" id="btnGenerar" class="btn btn-primary btn-lg py-3 rounded-pill fw-bold shadow-glow hover-scale d-flex align-items-center justify-content-center text-white"
                                         style="background: linear-gradient(90deg, #2563eb 0%, #06b6d4 100%); border: none;">
                                     <span class="me-2 letter-spacing-1">GENERAR PROYECTO</span>
                                     <i class="fa fa-arrow-right ms-2 moving-icon"></i>
@@ -88,52 +80,184 @@
                 </p>
 
             </div>
+
+            <!-- Columna Derecha: Panel de Progreso (Inicialmente Oculto) -->
+            <div class="col-lg-5 col-md-6 d-none fade-in-right" id="progressColumn">
+                <div class="card shadow-2xl rounded-4 glass-card h-100 border-0" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px);">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                            <h4 class="fw-bold text-dark">Generando...</h4>
+                            <p class="text-muted small">No cierres esta ventana</p>
+                        </div>
+
+                        <ul class="list-unstyled" id="processSteps">
+                            <li class="d-flex align-items-center mb-4 step-item" data-step="1">
+                                <div class="icon-box me-3"><i class="far fa-circle text-secondary fa-lg step-icon"></i></div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold step-text text-muted">Validando configuración</h6>
+                                    <small class="text-muted step-desc">Verificando parámetros...</small>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center mb-4 step-item" data-step="2">
+                                <div class="icon-box me-3"><i class="far fa-circle text-secondary fa-lg step-icon"></i></div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold step-text text-muted">Esquema de Base de Datos</h6>
+                                    <small class="text-muted step-desc">Extrayendo estructura...</small>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center mb-4 step-item" data-step="3">
+                                <div class="icon-box me-3"><i class="far fa-circle text-secondary fa-lg step-icon"></i></div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold step-text text-muted">Limpieza de Entorno</h6>
+                                    <small class="text-muted step-desc">Preparando Flutter...</small>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center mb-4 step-item" data-step="4">
+                                <div class="icon-box me-3"><i class="far fa-circle text-secondary fa-lg step-icon"></i></div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold step-text text-muted">Compilando APK</h6>
+                                    <small class="text-muted step-desc">Construyendo release (Lento)...</small>
+                                </div>
+                                <div class="spinner-border spinner-border-sm text-primary ms-auto d-none step-spinner" role="status"></div>
+                            </li>
+                            <li class="d-flex align-items-center mb-4 step-item" data-step="5">
+                                <div class="icon-box me-3"><i class="far fa-circle text-secondary fa-lg step-icon"></i></div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold step-text text-muted">Empaquetando Código</h6>
+                                    <small class="text-muted step-desc">Generando ZIP...</small>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center step-item" data-step="6">
+                                <div class="icon-box me-3"><i class="far fa-circle text-secondary fa-lg step-icon"></i></div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold step-text text-muted">Finalizando</h6>
+                                    <small class="text-muted step-desc">Listo para descargar</small>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
-<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; text-align:center; padding-top:20%;">
-    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
-        <span class="visually-hidden">Cargando...</span>
-    </div>
-    <h3 class="text-white mt-3">Compilando App con Flutter...</h3>
-    <p class="text-white">Esto puede tardar unos minutos. Por favor no cierres la ventana.</p>
-</div>
+<style>
+    .step-text { transition: color 0.3s ease; }
+    .step-item.active .step-text { color: #0d6efd !important; }
+    .step-item.active .step-icon { color: #0d6efd !important; }
+    .step-item.completed .step-text { color: #198754 !important; }
+    .step-item.completed .step-icon { color: #198754 !important; }
+    .step-item.completed .step-desc { color: #198754 !important; opacity: 0.8; }
+    
+    .fade-in-right { animation: fadeInRight 0.5s ease-out forwards; }
+    @@keyframes fadeInRight {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+</style>
 
 @section Scripts {
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dbSelector = document.getElementById('dbSelector');
+            
+            // Cargar bases de datos asíncronamente
+            fetch('@Url.Action("GetDatabases", "Generador")')
+                .then(response => response.json())
+                .then(data => {
+                    dbSelector.innerHTML = '<option value="">-- Selecciona base de datos --</option>';
+                    if (data.success) {
+                        data.databases.forEach(db => {
+                            const option = document.createElement('option');
+                            option.value = db;
+                            option.textContent = db;
+                            dbSelector.appendChild(option);
+                        });
+                    } else {
+                        dbSelector.innerHTML = '<option value="">Error al cargar bases de datos</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando bases de datos:', error);
+                    dbSelector.innerHTML = '<option value="">Error de conexión</option>';
+                });
+        });
+
         document.getElementById('generarForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const formData = new FormData(this);
-            const loadingOverlay = document.getElementById('loadingOverlay');
+            const btnGenerar = document.getElementById('btnGenerar');
+            const progressColumn = document.getElementById('progressColumn');
+            
+            // UI Changes
+            btnGenerar.disabled = true;
+            btnGenerar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Procesando...';
+            
+            // Mostrar columna derecha
+            progressColumn.classList.remove('d-none');
+            
+            const updateStep = (stepIndex, status) => {
+                const steps = document.querySelectorAll('.step-item');
+                const step = steps[stepIndex];
+                const icon = step.querySelector('.step-icon');
+                const text = step.querySelector('.step-text');
+                const spinner = step.querySelector('.step-spinner');
 
-            // Mostrar spinner
-            loadingOverlay.style.display = 'block';
+                if (status === 'active') {
+                    step.classList.add('active');
+                    text.classList.remove('text-muted');
+                    icon.className = 'fas fa-spinner fa-spin text-primary fa-lg step-icon';
+                    if(spinner) spinner.classList.remove('d-none');
+                } else if (status === 'completed') {
+                    step.classList.remove('active');
+                    step.classList.add('completed');
+                    icon.className = 'fas fa-check-circle text-success fa-lg step-icon';
+                    if(spinner) spinner.classList.add('d-none');
+                }
+            };
 
-            // Hacer petición AJAX que SIGUE el redirect
+            // Simular progreso
+            updateStep(0, 'active'); // Validando
+
+            setTimeout(() => { updateStep(0, 'completed'); updateStep(1, 'active'); }, 1500);
+            setTimeout(() => { updateStep(1, 'completed'); updateStep(2, 'active'); }, 3000);
+            setTimeout(() => { updateStep(2, 'completed'); updateStep(3, 'active'); }, 5000); // Entra a compilar
+
             fetch('@Url.Action("GenerarApk", "Generador")', {
                 method: 'POST',
                 body: formData,
-                redirect: 'follow' // Seguir redirecciones automáticamente
+                redirect: 'follow'
             })
             .then(response => {
-                loadingOverlay.style.display = 'none';
+                updateStep(3, 'completed'); // Fin compilar
+                updateStep(4, 'active'); // Empaquetando
+                
+                setTimeout(() => {
+                    updateStep(4, 'completed');
+                    updateStep(5, 'active'); // Finalizando
+                }, 800);
 
-                // Si la respuesta es un redirect (status 302), seguirlo
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else if (response.ok) {
-                    // Si por alguna razón no redirigió, ir manualmente
-                    window.location.href = '@Url.Action("Descargar", "Generador")';
-                } else {
-                    throw new Error('Error en la generación del APK');
-                }
+                setTimeout(() => {
+                    updateStep(5, 'completed');
+                    
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else if (response.ok) {
+                        window.location.href = '@Url.Action("Descargar", "Generador")';
+                    } else {
+                        throw new Error('Error en la generación');
+                    }
+                }, 1500);
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error al generar el APK. Por favor intenta nuevamente.');
-                loadingOverlay.style.display = 'none';
+                btnGenerar.disabled = false;
+                btnGenerar.innerHTML = '<span class="me-2 letter-spacing-1">GENERAR PROYECTO</span><i class="fa fa-arrow-right ms-2 moving-icon"></i>';
             });
         });
     </script>

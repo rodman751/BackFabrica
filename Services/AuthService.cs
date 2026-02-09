@@ -1,4 +1,5 @@
 ﻿using CapaDapper.Cadena;
+using CapaDapper.Dtos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Services;
@@ -22,7 +23,7 @@ namespace Services
  
         }
 
-        public async Task<string> LoginAsync(string usuario, string password)
+        public async Task<LoginResponseDto> LoginAsync(string usuario, string password)
         {
             // 1. Validar contra la Base de Datos (usando tu Repo con Dapper)
             var user = await _repository.ValidarUserPassAsync(usuario, password);
@@ -50,12 +51,20 @@ namespace Services
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(1),
+                expires: DateTime.Now.AddHours(8),
                 signingCredentials: creds
             );
 
-            // 5. Escribir el token como string
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            // 5. Retornar token + datos del usuario
+            return new LoginResponseDto
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(token),
+                Id = user.Usuario?.Id,
+                Username = user.Usuario?.Username,
+                Email = user.Usuario?.Email,
+                Role = user.Rol,
+                ModuloOrigen = user.ModuloOrigen
+            };
         }
     }
 }

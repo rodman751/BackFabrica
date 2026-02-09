@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CapaDapper.Dtos;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace Services
 {
     public interface IAuthService
     {
-        // Devuelve el string del token si el login es correcto
-        Task<string> LoginAsync(string usuario, string password);
+        // Devuelve los datos completos del login (token + usuario + rol + moduloOrigen)
+        Task<LoginResponseDto> LoginAsync(string usuario, string password);
     }
 }

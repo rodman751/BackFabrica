@@ -36,8 +36,16 @@ namespace BackFabrica.Controllers
             }
             try
             {
-                var token = await _authService.LoginAsync(usuario, password);
-                return Ok(new { token });
+                var result = await _authService.LoginAsync(usuario, password);
+                return Ok(new
+                {
+                    token = result.Token,
+                    id = result.Id,
+                    username = result.Username,
+                    email = result.Email,
+                    role = result.Role,
+                    moduloOrigen = result.ModuloOrigen
+                });
             }
             catch (UnauthorizedAccessException ex)
             {

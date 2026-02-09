@@ -83,6 +83,7 @@ namespace GenAPK.Controllers
                 // Guardar en TempData con persistencia mejorada
                 TempData["ApkPath"] = buildResult.ApkPath;
                 TempData["ZipPath"] = buildResult.SourceCodeZipPath;
+                TempData["FlutterZipPath"] = buildResult.FlutterSourceCodeZipPath;
                 TempData["DbName"] = selectedDb;
                 TempData["Success"] = "APK y código fuente generados correctamente.";
 
@@ -108,6 +109,7 @@ namespace GenAPK.Controllers
             // Usar Peek para no consumir los valores
             ViewBag.ApkPath = TempData.Peek("ApkPath");
             ViewBag.ZipPath = TempData.Peek("ZipPath");
+            ViewBag.FlutterZipPath = TempData.Peek("FlutterZipPath");
             ViewBag.DbName = TempData.Peek("DbName");
             ViewBag.Success = TempData.Peek("Success");
 
@@ -146,6 +148,28 @@ namespace GenAPK.Controllers
             if (string.IsNullOrEmpty(rutaZip) || !System.IO.File.Exists(rutaZip))
             {
                 TempData["Error"] = "El archivo ZIP no está disponible.";
+                return RedirectToAction("Index");
+            }
+
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaZip);
+            string nombreArchivo = Path.GetFileName(rutaZip);
+
+            // Mantener TempData para permitir múltiples descargas
+            TempData.Keep();
+
+            return File(fileBytes, "application/zip", nombreArchivo);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DescargarFlutterZip()
+        {
+            // Usar Peek para no consumir el valor
+            string rutaZip = TempData.Peek("FlutterZipPath")?.ToString();
+            string dbName = TempData.Peek("DbName")?.ToString();
+
+            if (string.IsNullOrEmpty(rutaZip) || !System.IO.File.Exists(rutaZip))
+            {
+                TempData["Error"] = "El archivo ZIP de Flutter no está disponible.";
                 return RedirectToAction("Index");
             }
 

@@ -2,6 +2,7 @@
 using GenAPK.Models;
 using Microsoft.AspNetCore.Mvc;
 using Services;
+using System.Text;
 
 namespace GenAPK.Controllers
 {
@@ -16,10 +17,30 @@ namespace GenAPK.Controllers
             _apkService = apkService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            // Carga inmediata de la vista, los datos se cargarán vía AJAX
-            return View();
+            try
+            {
+                // Verificar si hay un perfil seleccionado
+                var profileKeyBytes = HttpContext.Session.Get("SelectedProfile");
+                if (profileKeyBytes == null || profileKeyBytes.Length == 0)
+                {
+                    TempData["Warning"] = "Por favor, selecciona un servidor de conexión primero.";
+                    return RedirectToAction("Index", "Login");
+                }
+
+                var profileKey = Encoding.UTF8.GetString(profileKeyBytes);
+                ViewBag.SelectedProfile = profileKey;
+
+                var dbs = await _repository.ObtenerNombresDeBasesDeDatosAsync();
+                ViewBag.Databases = dbs;
+                return View();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Error al cargar bases de datos: " + ex.Message;
+                return View();
+            }
         }
 
         [HttpGet]
@@ -27,6 +48,13 @@ namespace GenAPK.Controllers
         {
             try
             {
+                // Verificar perfil seleccionado
+                var profileKeyBytes = HttpContext.Session.Get("SelectedProfile");
+                if (profileKeyBytes == null || profileKeyBytes.Length == 0)
+                {
+                    return Json(new { success = false, error = "No hay servidor seleccionado" });
+                }
+
                 var dbs = await _repository.ObtenerNombresDeBasesDeDatosAsync();
                 return Json(new { success = true, databases = dbs });
             }
@@ -35,6 +63,8 @@ namespace GenAPK.Controllers
                 return Json(new { success = false, error = ex.Message });
             }
         }
+
+        // ... resto del código sin cambios ...
 
         [HttpGet]
         public async Task<IActionResult> GetJson(string selectedDb)
@@ -80,14 +110,12 @@ namespace GenAPK.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Guardar en TempData con persistencia mejorada
                 TempData["ApkPath"] = buildResult.ApkPath;
                 TempData["ZipPath"] = buildResult.SourceCodeZipPath;
                 TempData["FlutterZipPath"] = buildResult.FlutterSourceCodeZipPath;
                 TempData["DbName"] = selectedDb;
                 TempData["Success"] = "APK y código fuente generados correctamente.";
 
-                // IMPORTANTE: Redirigir sin devolver archivo
                 return RedirectToAction("Descargar");
             }
             catch (Exception ex)
@@ -99,14 +127,12 @@ namespace GenAPK.Controllers
 
         public IActionResult Descargar()
         {
-            // Peek en lugar de leer directamente para no consumir
             if (TempData.Peek("ApkPath") == null)
             {
                 TempData["Error"] = "No hay archivos disponibles para descargar.";
                 return RedirectToAction("Index");
             }
 
-            // Usar Peek para no consumir los valores
             ViewBag.ApkPath = TempData.Peek("ApkPath");
             ViewBag.ZipPath = TempData.Peek("ZipPath");
             ViewBag.FlutterZipPath = TempData.Peek("FlutterZipPath");
@@ -119,7 +145,6 @@ namespace GenAPK.Controllers
         [HttpGet]
         public async Task<IActionResult> DescargarApk()
         {
-            // Usar Peek para no consumir el valor
             string rutaApk = TempData.Peek("ApkPath")?.ToString();
             string dbName = TempData.Peek("DbName")?.ToString();
 
@@ -132,7 +157,6 @@ namespace GenAPK.Controllers
             byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaApk);
             string nombreArchivo = $"App_{dbName}_{DateTime.Now:yyyyMMdd}.apk";
 
-            // Mantener TempData para permitir múltiples descargas
             TempData.Keep();
 
             return File(fileBytes, "application/vnd.android.package-archive", nombreArchivo);
@@ -141,7 +165,6 @@ namespace GenAPK.Controllers
         [HttpGet]
         public async Task<IActionResult> DescargarZip()
         {
-            // Usar Peek para no consumir el valor
             string rutaZip = TempData.Peek("ZipPath")?.ToString();
             string dbName = TempData.Peek("DbName")?.ToString();
 
@@ -154,7 +177,6 @@ namespace GenAPK.Controllers
             byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaZip);
             string nombreArchivo = Path.GetFileName(rutaZip);
 
-            // Mantener TempData para permitir múltiples descargas
             TempData.Keep();
 
             return File(fileBytes, "application/zip", nombreArchivo);
@@ -163,7 +185,6 @@ namespace GenAPK.Controllers
         [HttpGet]
         public async Task<IActionResult> DescargarFlutterZip()
         {
-            // Usar Peek para no consumir el valor
             string rutaZip = TempData.Peek("FlutterZipPath")?.ToString();
             string dbName = TempData.Peek("DbName")?.ToString();
 
@@ -176,7 +197,6 @@ namespace GenAPK.Controllers
             byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(rutaZip);
             string nombreArchivo = Path.GetFileName(rutaZip);
 
-            // Mantener TempData para permitir múltiples descargas
             TempData.Keep();
 
             return File(fileBytes, "application/zip", nombreArchivo);

@@ -1,99 +1,139 @@
 ﻿using CapaDapper.Dtos;
 using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using System; // Agregado para Exception
+using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CapaDapper.DataService
 {
-	public class DbMetadataRepository : IDbMetadataRepository
-	{
-		private readonly IConfiguration _configuration;
-		private readonly string _connectionTemplate;
+    public class DbMetadataRepository : IDbMetadataRepository
+    {
+        private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-		public DbMetadataRepository(IConfiguration configuration)
-		{
-			_configuration = configuration;
-			// Leemos la plantilla "Server=...;Database={0};..."
-			_connectionTemplate = _configuration.GetConnectionString("TemplateConnection");
-		}
+        public DbMetadataRepository(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+        {
+            _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
 
-		public string CreateConnectionString(string dbName) =>
-		 string.Format(_connectionTemplate, dbName);
+        /// <summary>
+        /// Obtiene la cadena de conexión del perfil seleccionado en la sesión
+        /// Si no hay perfil seleccionado, usa TemplateConnection por defecto
+        /// </summary>
+        private string ObtenerConnectionTemplate()
+        {
+            try
+            {
+                // Intentar leer el perfil seleccionado de la sesión
+                var session = _httpContextAccessor.HttpContext?.Session;
+                if (session != null)
+                {
+                    var profileKeyBytes = session.Get("SelectedProfile");
+                    if (profileKeyBytes != null && profileKeyBytes.Length > 0)
+                    {
+                        var profileKey = Encoding.UTF8.GetString(profileKeyBytes);
+                        var connectionString = _configuration[$"ConnectionProfiles:{profileKey}:ConnectionString"];
 
-		public IDbConnection CreateConnection(string dbName) =>
-			new SqlConnection(CreateConnectionString(dbName));
+                        if (!string.IsNullOrEmpty(connectionString))
+                        {
+                            return connectionString;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log el error si es necesario
+                Console.WriteLine($"Error al leer perfil de sesión: {ex.Message}");
+            }
 
-		#region CConfig conexion
-		private IDbConnection CrearConexion(string baseDatos)
-		{
-			// Reemplazamos el {0} por el nombre de la DB que nos pasan
-			string connectionString = string.Format(_connectionTemplate, baseDatos);
-			return new SqlConnection(connectionString);
-		}
+            // Fallback: usar TemplateConnection por defecto
+            return _configuration.GetConnectionString("TemplateConnection");
+        }
 
-		public async Task<IEnumerable<string>> ObtenerNombresDeBasesDeDatosAsync()
-		{
-			// Nos conectamos a 'master' para ver qué bases de datos existen
-			using (var connection = CrearConexion("master"))
-			{
-				// Filtramos database_id > 4 para no traer las del sistema (master, tempdb, etc.)
-				var query = "SELECT name FROM sys.databases WHERE database_id > 4 ORDER BY name";
+        public string CreateConnectionString(string dbName)
+        {
+            var template = ObtenerConnectionTemplate();
+            return string.Format(template, dbName);
+        }
 
-				// Le damos un poco más de tiempo también al listado (60 seg)
-				return await connection.QueryAsync<string>(query, commandTimeout: 60);
-			}
-		}
+        public IDbConnection CreateConnection(string dbName) =>
+            new SqlConnection(CreateConnectionString(dbName));
 
-		public async Task<string> ObtenerEsquemaJsonAsync(string nombreBaseDatos)
-		{
-			// 1. Nos conectamos DIRECTAMENTE a la base de datos que eligió el usuario
-			using (var connection = CrearConexion(nombreBaseDatos))
-			{
-				// 2. Ejecutamos el Store Procedure
-				// SOLUCIÓN AL TIMEOUT: Agregamos commandTimeout: 180
-				var resultado = await connection.QueryFirstOrDefaultAsync<string>(
-					"sp_GetDatabaseSchema",
-					commandType: CommandType.StoredProcedure,
-					commandTimeout: 180 // <--- 3 MINUTOS DE ESPERA (CRÍTICO)
-				);
+        #region CConfig conexion
+        private IDbConnection CrearConexion(string baseDatos)
+        {
+            var template = ObtenerConnectionTemplate();
+            string connectionString = string.Format(template, baseDatos);
+            return new SqlConnection(connectionString);
+        }
 
-				return resultado;
-			}
-		}
+        public async Task<IEnumerable<string>> ObtenerNombresDeBasesDeDatosAsync()
+        {
+            // Nos conectamos a 'master' para ver qué bases de datos existen
+            using (var connection = CrearConexion("master"))
+            {
+                // Filtramos database_id > 4 para no traer las del sistema (master, tempdb, etc.)
+                var query = "SELECT name FROM sys.databases WHERE database_id > 4 ORDER BY name";
 
-		#endregion
+                // Le damos un poco más de tiempo también al listado (60 seg)
+                return await connection.QueryAsync<string>(query, commandTimeout: 60);
+            }
+        }
 
-		public async Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request)
-		{
-			using var connection = CrearConexion("master");
+        public async Task<string> ObtenerEsquemaJsonAsync(string nombreBaseDatos)
+        {
+            // 1. Nos conectamos DIRECTAMENTE a la base de datos que eligió el usuario
+            using (var connection = CrearConexion(nombreBaseDatos))
+            {
+                // 2. Ejecutamos el Store Procedure
+                // SOLUCIÓN AL TIMEOUT: Agregamos commandTimeout: 180
+                var resultado = await connection.QueryFirstOrDefaultAsync<string>(
+                    "sp_GetDatabaseSchema",
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 180 // <--- 3 MINUTOS DE ESPERA (CRÍTICO)
+                );
 
-			var parametros = new
-			{
-				p_nombre_db = request.NombreDb,
-				p_json_tablas_crud = request.JsonTablas
-			};
+                return resultado;
+            }
+        }
 
-			try
-			{
-				// Llamamos al SP Maestro
-				// También aumentamos el tiempo aquí por seguridad
-				await connection.ExecuteAsync("sp_Master_CrearModuloCompleto",
-					parametros,
-					commandType: System.Data.CommandType.StoredProcedure,
-					commandTimeout: 180); // <--- 3 MINUTOS PARA CREAR TABLAS
+        #endregion
 
-				return true;
-			}
-			catch (Exception ex)
-			{
-				// Loguear error: ex.Message
-				return false;
-			}
-		}
-	}
+        public async Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request)
+        {
+            using var connection = CrearConexion("master");
+
+            var parametros = new
+            {
+                p_nombre_db = request.NombreDb,
+                p_json_tablas_crud = request.JsonTablas
+            };
+
+            try
+            {
+                // Llamamos al SP Maestro
+                // También aumentamos el tiempo aquí por seguridad
+                await connection.ExecuteAsync("sp_Master_CrearModuloCompleto",
+                    parametros,
+                    commandType: System.Data.CommandType.StoredProcedure,
+                    commandTimeout: 180); // <--- 3 MINUTOS PARA CREAR TABLAS
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Loguear error: ex.Message
+                Console.WriteLine($"Error en CrearNuevoModuloAsync: {ex.Message}");
+                return false;
+            }
+        }
+    }
 }

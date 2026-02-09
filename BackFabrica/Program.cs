@@ -18,12 +18,9 @@ builder.Services.AddScoped<ISaludRepository, SaludRepository>();
 builder.Services.AddScoped<IDatabaseContext, DatabaseContext>();
 builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
-
-
 builder.Services.AddScoped<DynamicCrudService>();
 
-
-
+builder.Services.AddHttpContextAccessor();
 
 //  fin services
 

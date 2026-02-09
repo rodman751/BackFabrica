@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace BackFabrica.Controllers
 {
-   
+
     [Route("api/[controller]")]
     [ApiController]
     public class DynamicCrudController : ControllerBase
@@ -47,7 +47,13 @@ namespace BackFabrica.Controllers
             switch (element.ValueKind)
             {
                 case JsonValueKind.String:
-                    return element.GetString();
+                    string stringValue = element.GetString();
+                    // Intentar parsear como DateTime
+                    if (DateTime.TryParse(stringValue, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime dateValue))
+                    {
+                        return dateValue;
+                    }
+                    return stringValue;
                 case JsonValueKind.Number:
                     if (element.TryGetInt32(out int intValue))
                         return intValue;
@@ -66,6 +72,64 @@ namespace BackFabrica.Controllers
                 default:
                     return element.ToString();
             }
+        }
+
+        // Nuevo método: Validar y mapear datos contra el esquema real
+        // Nuevo método: Validar y mapear datos contra el esquema real
+        private Dictionary<string, object> ValidateAndMapData(Dictionary<string, object> data, string tableName, DbSchema schema)
+        {
+            if (data == null || schema?.Columns == null) return data;
+
+            // Crear un diccionario de mapeo: nombre en cualquier formato -> nombre real en BD
+            var columnMap = schema.Columns
+                .Where(c => c.Table.Equals(tableName, StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(
+                    c => c.Name,
+                    c => c.Name,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+            var validatedData = new Dictionary<string, object>();
+
+            foreach (var kvp in data)
+            {
+                string dataKey = kvp.Key;
+
+                // Buscar el nombre real de la columna (case-insensitive)
+                if (columnMap.TryGetValue(dataKey, out string realColumnName))
+                {
+                    validatedData[realColumnName] = kvp.Value;
+                }
+                else
+                {
+                    // Intento adicional: convertir PascalCase/camelCase a snake_case
+                    string snakeCaseKey = ConvertToSnakeCase(dataKey);
+                    if (columnMap.TryGetValue(snakeCaseKey, out string realColumnNameSnake))
+                    {
+                        validatedData[realColumnNameSnake] = kvp.Value;
+                        Console.WriteLine($"Info: Mapeado '{dataKey}' a '{realColumnNameSnake}'");
+                    }
+                    else
+                    {
+                        // Opcional: Log de advertencia para columnas no encontradas
+                        Console.WriteLine($"Advertencia: La columna '{dataKey}' no existe en el esquema de la tabla '{tableName}'");
+                    }
+                }
+            }
+
+            return validatedData;
+        }
+
+        // Helper: Convertir PascalCase/camelCase a snake_case
+        private string ConvertToSnakeCase(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            return string.Concat(
+                input.Select((x, i) => i > 0 && char.IsUpper(x)
+                    ? "_" + x.ToString()
+                    : x.ToString())
+            ).ToLower();
         }
 
         [HttpPost("V2/CREADTE")]
@@ -93,10 +157,16 @@ namespace BackFabrica.Controllers
                 // 4. Convertir JsonElements a tipos .NET
                 var convertedData = ConvertJsonElementsToNetTypes(request.Data);
 
-                // 5. Llamamos al servicio con la cadena YA CONSTRUIDA
+                // 5. Validar y mapear datos contra el esquema
+                var validatedData = ValidateAndMapData(convertedData, tableName, request.Schema);
+
+                if (validatedData.Count == 0)
+                    return BadRequest("No hay datos válidos para insertar.");
+
+                // 6. Llamamos al servicio con la cadena YA CONSTRUIDA
                 var result = await _dynamicService.InsertDynamicAsync(
                     tableName,
-                    convertedData,
+                    validatedData,
                     request.Schema,
                     finalConnectionString
                 );
@@ -137,15 +207,21 @@ namespace BackFabrica.Controllers
                 // 4. Convertir JsonElements a tipos .NET
                 var convertedData = ConvertJsonElementsToNetTypes(request.Data);
 
-                // 5. Llamamos al servicio con la cadena YA CONSTRUIDA
+                // 5. Validar y mapear datos contra el esquema
+                var validatedData = ValidateAndMapData(convertedData, tableName, request.Schema);
+
+                if (validatedData.Count == 0)
+                    return BadRequest("No hay datos válidos para actualizar.");
+
+                // 6. Llamamos al servicio con la cadena YA CONSTRUIDA
                 var result = await _dynamicService.UpdateDynamicAsync(
                     tableName,
-                    convertedData,
+                    validatedData,
                     request.Schema,
                     finalConnectionString
                 );
 
-                return Ok(new { message = "Registro acualizado exitosamente", rowsAffected = result });
+                return Ok(new { message = "Registro actualizado exitosamente", rowsAffected = result });
             }
             catch (Exception ex)
             {
@@ -182,7 +258,7 @@ namespace BackFabrica.Controllers
                 // Nota: Ya no pasamos connectionString en el DTO request, la construimos aquí por seguridad.
                 var result = await _dynamicService.GetAllDynamicAsync(
                     tableName,
-                    
+
                     request.Schema,
                     finalConnectionString
                 );

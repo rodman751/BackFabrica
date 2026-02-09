@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<Services.ApkBuilderService>(); // Registro del servicio ApkBuilderService
 builder.Services.AddScoped<CapaDapper.DataService.IDbMetadataRepository, CapaDapper.DataService.DbMetadataRepository>(); // Registro del repositorio Dapper
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession();
 
 // =========================================================================
 // SOLUCIÓN 1: CONFIGURACIÓN DE TIEMPO DE ESPERA (TIMEOUT)
@@ -32,7 +34,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseSession();
 app.UseRouting();
 
 app.UseAuthorization();

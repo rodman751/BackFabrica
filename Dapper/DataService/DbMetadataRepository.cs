@@ -31,8 +31,24 @@ namespace CapaDapper.DataService
         {
             try
             {
-                // Intentar leer el perfil seleccionado de la sesión
-                var session = _httpContextAccessor.HttpContext?.Session;
+                var httpContext = _httpContextAccessor.HttpContext;
+
+                // 1. PRIORIDAD ALTA: Leer perfil desde el header X-Connection-Profile (para API/APK)
+                if (httpContext?.Request?.Headers != null && httpContext.Request.Headers.ContainsKey("X-Connection-Profile"))
+                {
+                    var headerValue = httpContext.Request.Headers["X-Connection-Profile"].ToString();
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        var connectionString = _configuration[$"ConnectionProfiles:{headerValue}:ConnectionString"];
+                        if (!string.IsNullOrEmpty(connectionString))
+                        {
+                            return connectionString;
+                        }
+                    }
+                }
+
+                // 2. PRIORIDAD MEDIA: Leer perfil desde la sesión (para MVC)
+                var session = httpContext?.Session;
                 if (session != null)
                 {
                     var profileKeyBytes = session.Get("SelectedProfile");
@@ -50,11 +66,10 @@ namespace CapaDapper.DataService
             }
             catch (Exception ex)
             {
-                // Log el error si es necesario
-                Console.WriteLine($"Error al leer perfil de sesión: {ex.Message}");
+                Console.WriteLine($"Error al leer perfil de conexión: {ex.Message}");
             }
 
-            // Fallback: usar TemplateConnection por defecto
+            // 3. Fallback: usar TemplateConnection por defecto
             return _configuration.GetConnectionString("TemplateConnection");
         }
 

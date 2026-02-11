@@ -21,5 +21,10 @@ namespace CapaDapper.DataService
         Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request);
 
 
-    }
+        Task<string> ParseSqlToSchemaJson(string fileContent, string dbName);
+        Task<List<string>> SplitColumnsRespectingParentheses(string text);
+
+
+
+	}
 }

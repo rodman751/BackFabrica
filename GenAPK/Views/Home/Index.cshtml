@@ -2,8 +2,6 @@
     ViewData["Title"] = "Inicio";
 }
 
-
-
 <div class="position-relative overflow-hidden hero-section" style="background: linear-gradient(135deg, #f0f4ff 0%, #e2e6fa 100%);">
     <div class="position-absolute top-0 end-0 translate-middle-y bg-primary opacity-10 rounded-circle" style="width: 600px; height: 600px; filter: blur(120px); margin-right: -200px;"></div>
     <div class="position-absolute bottom-0 start-0 translate-middle-x bg-info opacity-10 rounded-circle" style="width: 500px; height: 500px; filter: blur(100px); margin-left: -100px;"></div>
@@ -15,46 +13,49 @@
                     <span class="badge bg-primary rounded-pill px-3 py-2 me-2 fw-bold">NUEVO</span>
                     <span class="text-muted fw-bold small pe-3 letter-spacing-1">MOTOR GENERADOR V2.0</span>
                 </div>
-                
+
                 <h1 class="display-3 fw-bolder mb-4 lh-1 text-dark">
                     De Base de Datos <br>
                     a <span class="text-gradient-primary">App Nativa.</span><br>
                     En minutos.
                 </h1>
-                
+
                 <p class="lead text-muted mb-5" style="font-size: 1.35rem; font-weight: 400;">
                     Automatiza el desarrollo móvil. Conecta tu SQL Azure y nuestra IA construye el código Flutter y el APK por ti. Sin programar.
                 </p>
-                
+
                 <div class="d-flex gap-3 flex-column flex-sm-row">
                     <a href="/Generador" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow-glow hover-lift-more d-flex align-items-center justify-content-center text-white">
                         <i class="fa fa-rocket me-3 fa-lg"></i>
                         CREAR MI APP AHORA
                     </a>
-                    
+
+                    <button type="button" class="btn btn-outline-primary btn-lg px-5 py-3 rounded-pill fw-bold hover-lift-more d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#modalImportarDb">
+                        <i class="fa fa-database me-3 fa-lg"></i>
+                        IMPORTAR DB
+                    </button>
                 </div>
             </div>
-            
+
             <div class="col-lg-6 text-center order-1 order-lg-2 mb-5 mb-lg-0">
                 <div class="floating-animation position-relative">
                     <div class="bg-white bg-opacity-50 rounded-circle shadow-lg position-absolute top-50 start-50 translate-middle" style="width: 90%; height: 90%; filter: blur(20px); z-index: -1;"></div>
-                    
-                    <lottie-player 
-                        src="https://assets2.lottiefiles.com/packages/lf20_w51pcehl.json" 
-                        background="transparent" 
-                        speed="1" 
-                        style="width: 100%; height: auto; max-width: 650px;" 
-                        loop 
-                        autoplay>
+
+                    <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_w51pcehl.json"
+                                   background="transparent"
+                                   speed="1"
+                                   style="width: 100%; height: auto; max-width: 650px;"
+                                   loop
+                                   autoplay>
                     </lottie-player>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="position-absolute bottom-0 start-0 w-100 overflow-hidden" style="line-height: 0; transform: rotate(180deg);">
         <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" style="width: 100%; height: 80px; fill: #ffffff;">
-             <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
         </svg>
     </div>
 </div>
@@ -74,7 +75,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-lg rounded-4 glass-card hover-lift-more">
                 <div class="card-body p-5 position-relative overflow-hidden">
@@ -88,7 +89,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-lg rounded-4 glass-card hover-lift-more">
                 <div class="card-body p-5 position-relative overflow-hidden">
@@ -104,3 +105,130 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL IMPORTAR DB -->
+<div class="modal fade" id="modalImportarDb" tabindex="-1" aria-labelledby="modalImportarDbLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0 pt-4">
+                <h5 class="modal-title fw-bold fs-3" id="modalImportarDbLabel">
+                    <i class="fa fa-database text-primary me-2"></i>
+                    Importar Base de Datos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formImportarDb" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="nombreDb" class="form-label fw-bold">
+                            <i class="fa fa-tag text-muted me-2"></i>
+                            Nombre del Módulo/Base de Datos
+                        </label>
+                        <input type="text" class="form-control form-control-lg rounded-3" id="nombreDb" name="nombreDb"
+                               placeholder="Ej: MiProyecto, SistemaVentas, etc." required>
+                        <div class="form-text">Este será el nombre de la base de datos a crear en SQL Server</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="archivoSql" class="form-label fw-bold">
+                            <i class="fa fa-file-code text-muted me-2"></i>
+                            Archivo SQL o TXT
+                        </label>
+                        <input type="file" class="form-control form-control-lg rounded-3" id="archivoSql" name="archivoSql"
+                               accept=".sql,.txt" required>
+                        <div class="form-text">
+                            <i class="fa fa-info-circle text-primary"></i>
+                            Suba un archivo .sql o .txt con la definición de sus tablas en formato JSON
+                        </div>
+                    </div>
+
+                    <div id="alertaImportar" class="alert d-none rounded-3" role="alert"></div>
+
+                    <div class="d-flex gap-3 justify-content-end">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4" id="btnImportar">
+                            <i class="fa fa-upload me-2"></i>
+                            <span id="btnImportarTexto">Importar y Crear</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('formImportarDb');
+            const btnImportar = document.getElementById('btnImportar');
+            const btnImportarTexto = document.getElementById('btnImportarTexto');
+            const alertaDiv = document.getElementById('alertaImportar');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                // Validaciones
+                const nombreDb = document.getElementById('nombreDb').value.trim();
+                const archivoSql = document.getElementById('archivoSql').files[0];
+
+                if (!nombreDb || !archivoSql) {
+                    mostrarAlerta('Por favor complete todos los campos', 'warning');
+                    return;
+                }
+
+                // Deshabilitar botón y mostrar loading
+                btnImportar.disabled = true;
+                btnImportarTexto.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Procesando...';
+
+                // Preparar FormData
+                const formData = new FormData();
+                formData.append('nombreDb', nombreDb);
+                formData.append('archivoSql', archivoSql);
+
+                try {
+                    const response = await fetch('/Home/ImportarDb', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        mostrarAlerta(result.message, 'success');
+                        // Limpiar formulario después de 2 segundos
+                        setTimeout(() => {
+                            form.reset();
+                            const modalElement = document.getElementById('modalImportarDb');
+                            const modal = bootstrap.Modal.getInstance(modalElement);
+                            modal.hide();
+                        }, 2000);
+                    } else {
+                        mostrarAlerta(result.message, 'danger');
+                    }
+                } catch (error) {
+                    mostrarAlerta('❌ Error de conexión: ' + error.message, 'danger');
+                } finally {
+                    // Rehabilitar botón
+                    btnImportar.disabled = false;
+                    btnImportarTexto.innerHTML = '<i class="fa fa-upload me-2"></i>Importar y Crear';
+                }
+            });
+
+            function mostrarAlerta(mensaje, tipo) {
+                alertaDiv.className = `alert alert-${tipo} rounded-3`;
+                alertaDiv.textContent = mensaje;
+                alertaDiv.classList.remove('d-none');
+
+                if (tipo === 'success') {
+                    setTimeout(() => {
+                        alertaDiv.classList.add('d-none');
+                    }, 3000);
+                }
+            }
+        });
+    </script>
+}

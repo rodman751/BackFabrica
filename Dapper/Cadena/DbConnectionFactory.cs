@@ -34,7 +34,8 @@ namespace CapaDapper.Cadena
                     var headerValue = httpContext.Request.Headers["X-Connection-Profile"].ToString();
                     if (!string.IsNullOrEmpty(headerValue))
                     {
-                        selectedProfile = headerValue;
+                        //selectedProfile = headerValue;
+                        selectedProfile = "Local";
                     }
                 }
                 // 2. PRIORIDAD MEDIA: Si no hay header, intentar leer de la sesión (para MVC)

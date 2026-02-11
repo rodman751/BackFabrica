@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using CapaDapper.Cadena;
 using CapaDapper.DataService;
-using Microsoft.AspNetCore.Mvc;
 using CapaDapper.Dtos;
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
 namespace BackFabrica.Controllers
@@ -14,12 +16,15 @@ namespace BackFabrica.Controllers
     {
         private readonly DynamicCrudService _dynamicService;
         private readonly IConfiguration _configuration;
-
+        private readonly IDbConnectionFactory _connectionFactory;
+        private readonly IDatabaseContext _dbContext;
         // Inyectamos IConfiguration para leer el appsettings.json
-        public DynamicCrudController(DynamicCrudService dynamicService, IConfiguration configuration)
+        public DynamicCrudController(DynamicCrudService dynamicService, IConfiguration configuration, IDbConnectionFactory connectionFactory, IDatabaseContext dbContext)
         {
             _dynamicService = dynamicService;
             _configuration = configuration;
+            _connectionFactory = connectionFactory;
+            _dbContext = dbContext;
         }
 
         // Método helper para convertir JsonElement a tipos .NET
@@ -137,45 +142,40 @@ namespace BackFabrica.Controllers
         {
             try
             {
-                // 1. Validaciones básicas
+                // 1. Validaciones básicas PRIMERO
                 if (request.Schema == null)
                     return BadRequest("El esquema es obligatorio.");
 
                 if (string.IsNullOrEmpty(request.Schema.DatabaseName))
                     return BadRequest("El JSON del esquema no contiene la propiedad 'database_name'.");
 
-                // 2. Obtener la plantilla desde appsettings.json
-                string templateConnection = _configuration.GetConnectionString("TemplateConnection");
+                // 2. ESTABLECER el contexto de la base de datos ANTES de crear la conexión
+                _dbContext.CurrentDb = request.Schema.DatabaseName;
 
-                if (string.IsNullOrEmpty(templateConnection))
-                    return StatusCode(500, "No se encontró la cadena 'TemplateConnection' en la configuración.");
-
-                // 3. REEMPLAZO DINÁMICO: Aquí cambiamos {0} por "Estudiantes" (o lo que venga en el JSON)
-                // string.Format busca el {0} y lo sustituye.
-                string finalConnectionString = string.Format(templateConnection, request.Schema.DatabaseName);
-
-                // 4. Convertir JsonElements a tipos .NET
+                // 3. Convertir JsonElements a tipos .NET
                 var convertedData = ConvertJsonElementsToNetTypes(request.Data);
 
-                // 5. Validar y mapear datos contra el esquema
+                // 4. Validar y mapear datos contra el esquema
                 var validatedData = ValidateAndMapData(convertedData, tableName, request.Schema);
 
                 if (validatedData.Count == 0)
                     return BadRequest("No hay datos válidos para insertar.");
 
-                // 6. Llamamos al servicio con la cadena YA CONSTRUIDA
-                var result = await _dynamicService.InsertDynamicAsync(
-                    tableName,
-                    validatedData,
-                    request.Schema,
-                    finalConnectionString
-                );
+                // 5. Ahora sí crear la conexión (ya tiene CurrentDb configurado)
+                using (var connection = _connectionFactory.CreateConnection())
+                {
+                    var result = await _dynamicService.InsertDynamicAsync(
+                        tableName,
+                        validatedData,
+                        request.Schema,
+                        connection.ConnectionString
+                    );
 
-                return Ok(new { message = "Registro creado exitosamente", rowsAffected = result });
+                    return Ok(new { message = "Registro creado exitosamente", rowsAffected = result });
+                }
             }
             catch (Exception ex)
             {
-                // Tip: Loguear el error real en consola para depurar
                 Console.WriteLine(ex.ToString());
                 return BadRequest(new { error = ex.Message });
             }
@@ -187,45 +187,40 @@ namespace BackFabrica.Controllers
         {
             try
             {
-                // 1. Validaciones básicas
+                // 1. Validaciones básicas PRIMERO
                 if (request.Schema == null)
                     return BadRequest("El esquema es obligatorio.");
 
                 if (string.IsNullOrEmpty(request.Schema.DatabaseName))
                     return BadRequest("El JSON del esquema no contiene la propiedad 'database_name'.");
 
-                // 2. Obtener la plantilla desde appsettings.json
-                string templateConnection = _configuration.GetConnectionString("TemplateConnection");
+                // 2. ESTABLECER el contexto de la base de datos ANTES de crear la conexión
+                _dbContext.CurrentDb = request.Schema.DatabaseName;
 
-                if (string.IsNullOrEmpty(templateConnection))
-                    return StatusCode(500, "No se encontró la cadena 'TemplateConnection' en la configuración.");
-
-                // 3. REEMPLAZO DINÁMICO: Aquí cambiamos {0} por "Estudiantes" (o lo que venga en el JSON)
-                // string.Format busca el {0} y lo sustituye.
-                string finalConnectionString = string.Format(templateConnection, request.Schema.DatabaseName);
-
-                // 4. Convertir JsonElements a tipos .NET
+                // 3. Convertir JsonElements a tipos .NET
                 var convertedData = ConvertJsonElementsToNetTypes(request.Data);
 
-                // 5. Validar y mapear datos contra el esquema
+                // 4. Validar y mapear datos contra el esquema
                 var validatedData = ValidateAndMapData(convertedData, tableName, request.Schema);
 
                 if (validatedData.Count == 0)
                     return BadRequest("No hay datos válidos para actualizar.");
 
-                // 6. Llamamos al servicio con la cadena YA CONSTRUIDA
-                var result = await _dynamicService.UpdateDynamicAsync(
-                    tableName,
-                    validatedData,
-                    request.Schema,
-                    finalConnectionString
-                );
+                // 5. Ahora sí crear la conexión (ya tiene CurrentDb configurado)
+                using (var connection = _connectionFactory.CreateConnection())
+                {
+                    var result = await _dynamicService.UpdateDynamicAsync(
+                        tableName,
+                        validatedData,
+                        request.Schema,
+                        connection.ConnectionString
+                    );
 
-                return Ok(new { message = "Registro actualizado exitosamente", rowsAffected = result });
+                    return Ok(new { message = "Registro actualizado exitosamente", rowsAffected = result });
+                }
             }
             catch (Exception ex)
             {
-                // Tip: Loguear el error real en consola para depurar
                 Console.WriteLine(ex.ToString());
                 return BadRequest(new { error = ex.Message });
             }
@@ -237,37 +232,30 @@ namespace BackFabrica.Controllers
         {
             try
             {
-                // 1. Validaciones básicas
+                // 1. Validaciones básicas PRIMERO
                 if (request.Schema == null)
                     return BadRequest("El esquema es obligatorio.");
 
                 if (string.IsNullOrEmpty(request.Schema.DatabaseName))
                     return BadRequest("El JSON del esquema no contiene la propiedad 'database_name'.");
 
-                // 2. Obtener la plantilla desde appsettings.json
-                string templateConnection = _configuration.GetConnectionString("TemplateConnection");
+                // 2. ESTABLECER el contexto de la base de datos ANTES de crear la conexión
+                _dbContext.CurrentDb = request.Schema.DatabaseName;
 
-                if (string.IsNullOrEmpty(templateConnection))
-                    return StatusCode(500, "No se encontró la cadena 'TemplateConnection' en la configuración.");
+                // 3. Ahora sí crear la conexión (ya tiene CurrentDb configurado)
+                using (var connection = _connectionFactory.CreateConnection())
+                {
+                    var result = await _dynamicService.GetAllDynamicAsync(
+                        tableName,
+                        request.Schema,
+                        connection.ConnectionString
+                    );
 
-                // 3. REEMPLAZO DINÁMICO: Aquí cambiamos {0} por "Estudiantes" (o lo que venga en el JSON)
-                // string.Format busca el {0} y lo sustituye.
-                string finalConnectionString = string.Format(templateConnection, request.Schema.DatabaseName);
-
-                // 4. Llamamos al servicio con la cadena YA CONSTRUIDA
-                // Nota: Ya no pasamos connectionString en el DTO request, la construimos aquí por seguridad.
-                var result = await _dynamicService.GetAllDynamicAsync(
-                    tableName,
-
-                    request.Schema,
-                    finalConnectionString
-                );
-
-                return Ok(new { message = "Registro creado exitosamente", rowsAffected = result });
+                    return Ok(new { message = "Datos obtenidos exitosamente", rowsAffected = result });
+                }
             }
             catch (Exception ex)
             {
-                // Tip: Loguear el error real en consola para depurar
                 Console.WriteLine(ex.ToString());
                 return BadRequest(new { error = ex.Message });
             }
@@ -279,34 +267,31 @@ namespace BackFabrica.Controllers
         {
             try
             {
-                // 1. Validaciones básicas
+                // 1. Validaciones básicas PRIMERO
                 if (schema == null)
                     return BadRequest("El esquema es obligatorio.");
 
                 if (string.IsNullOrEmpty(schema.DatabaseName))
                     return BadRequest("El JSON del esquema no contiene la propiedad 'database_name'.");
 
-                // 2. Obtener la plantilla desde appsettings.json
-                string templateConnection = _configuration.GetConnectionString("TemplateConnection");
+                // 2. ESTABLECER el contexto de la base de datos ANTES de crear la conexión
+                _dbContext.CurrentDb = schema.DatabaseName;
 
-                if (string.IsNullOrEmpty(templateConnection))
-                    return StatusCode(500, "No se encontró la cadena 'TemplateConnection' en la configuración.");
+                // 3. Ahora sí crear la conexión (ya tiene CurrentDb configurado)
+                using (var connection = _connectionFactory.CreateConnection())
+                {
+                    var result = await _dynamicService.GetByIdDynamicAsync(
+                        tableName,
+                        id,
+                        schema,
+                        connection.ConnectionString
+                    );
 
-                // 3. Reemplazo dinámico
-                string finalConnectionString = string.Format(templateConnection, schema.DatabaseName);
+                    if (result == null)
+                        return NotFound(new { message = "Registro no encontrado" });
 
-                // 4. Llamar al servicio
-                var result = await _dynamicService.GetByIdDynamicAsync(
-                    tableName,
-                    id,
-                    schema,
-                    finalConnectionString
-                );
-
-                if (result == null)
-                    return NotFound(new { message = "Registro no encontrado" });
-
-                return Ok(result);
+                    return Ok(result);
+                }
             }
             catch (Exception ex)
             {

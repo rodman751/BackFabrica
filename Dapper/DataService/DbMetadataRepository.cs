@@ -156,136 +156,79 @@ namespace CapaDapper.DataService
         public async Task<string> ParseSqlToSchemaJson(string fileContent, string dbName)
         {
             if (string.IsNullOrWhiteSpace(fileContent))
-                throw new ArgumentException("El contenido del archivo SQL está vacío.", nameof(fileContent));
+                throw new ArgumentException("El contenido está vacío.");
 
-            // 1. LIMPIEZA
+            // 1. Limpieza inicial
             string cleanContent = fileContent.Replace("\r\n", "\n");
             cleanContent = Regex.Replace(cleanContent, @"/\*[\s\S]*?\*/", string.Empty, RegexOptions.Singleline);
             cleanContent = Regex.Replace(cleanContent, @"--.*?$", string.Empty, RegexOptions.Multiline);
-
-            // Eliminar comandos de sistema y limpieza de caracteres especiales
-            cleanContent = Regex.Replace(cleanContent, @"^\s*INSERT\s+INTO.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-            cleanContent = Regex.Replace(cleanContent, @"^\s*USE\s+.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-            cleanContent = Regex.Replace(cleanContent, @"^\s*GO\s*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-            cleanContent = Regex.Replace(cleanContent, @"^\s*SET\s+.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-            // Quitamos corchetes para normalizar nombres
             cleanContent = cleanContent.Replace("[", "").Replace("]", "");
 
-            // 2. DETECCIÓN DE TABLAS
-            // El Regex busca: CREATE TABLE Nombre ( contenido );
+            // 2. Detección de tablas
             var tableRegex = new Regex(@"CREATE\s+TABLE\s+(?:(\w+)\.)?(\w+)\s*\(([\s\S]+?)\)\s*;", RegexOptions.IgnoreCase | RegexOptions.Singleline);
             var matches = tableRegex.Matches(cleanContent);
 
-            if (matches.Count == 0)
-                throw new InvalidOperationException("No se encontraron tablas válidas en el SQL.");
-
-            var finalTablesForJson = new List<object>();
+            var finalTables = new List<object>();
 
             foreach (Match match in matches)
             {
                 string tableName = match.Groups[2].Value;
                 string rawColumns = match.Groups[3].Value;
-
                 var tableColumns = new List<object>();
+
                 var lines = await SplitColumnsRespectingParentheses(rawColumns);
 
-                foreach (var rawLine in lines)
+                foreach (var line in lines.Select(l => l.Trim()).Where(l => !string.IsNullOrEmpty(l)))
                 {
-                    var line = rawLine.Trim();
-                    if (string.IsNullOrEmpty(line)) continue;
+                    if (line.ToUpper().StartsWith("CONSTRAINT") || line.ToUpper().StartsWith("PRIMARY KEY (")) continue;
 
-                    var lineUpper = line.ToUpperInvariant();
+                    // Regex mejorado para capturar Nombre Tipo(Largo) Resto
+                    // Ejemplo: [Precio] [DECIMAL](10,2) [NOT NULL]
+                    var colRegex = new Regex(@"^(\w+)\s+([\w\(\),]+)(.*)$", RegexOptions.IgnoreCase);
+                    var colMatch = colRegex.Match(line);
 
-                    // Saltamos constraints y primary keys manuales (el SP de SQL ya gestiona el ID y PK base)
-                    if (lineUpper.StartsWith("CONSTRAINT") || (lineUpper.StartsWith("PRIMARY KEY") && line.Contains("(")))
-                        continue;
-
-                    var parts = Regex.Split(line, @"\s+");
-                    if (parts.Length < 2) continue;
-
-                    string colName = parts[0];
-
-                    // Si el nombre de la columna es igual a los automáticos del SP, los saltamos
-                    if (colName.ToLower() == "id" || colName.ToLower() == "usuario_creacion_id" || colName.ToLower() == "fecha_registro")
-                        continue;
-
-                    string colType = parts[1];
-
-                    // Manejo de tipos con paréntesis como NVARCHAR(100)
-                    if (colType.Contains("(") && !colType.Contains(")"))
+                    if (colMatch.Success)
                     {
-                        var sb = new StringBuilder(colType);
-                        for (int i = 2; i < parts.Length; i++)
+                        string colName = colMatch.Groups[1].Value;
+                        string colType = colMatch.Groups[2].Value;
+                        string extra = colMatch.Groups[3].Value.Trim().TrimEnd(',');
+
+                        // Saltamos columnas que el SP ya crea por defecto
+                        if (new[] { "id", "usuario_creacion_id", "fecha_registro" }.Contains(colName.ToLower()))
+                            continue;
+
+                        tableColumns.Add(new
                         {
-                            sb.Append(parts[i]);
-                            if (parts[i].Contains(")")) break;
-                        }
-                        colType = sb.ToString();
+                            campo = colName,
+                            tipo = colType,
+                            extra = extra
+                        });
                     }
-                    colType = colType.TrimEnd(',');
-
-                    // Mapeo de tipos para compatibilidad
-                    string upperType = colType.ToUpperInvariant();
-                    if (upperType.StartsWith("INT") && lineUpper.Contains("IDENTITY")) colType = "INT";
-                    else if (upperType == "TEXT") colType = "NVARCHAR(MAX)";
-                    else if (upperType == "BOOL" || upperType == "BOOLEAN") colType = "BIT";
-
-                    // Capturar el resto de la línea como "extra" (NOT NULL, DEFAULT, etc.)
-                    // Quitamos el nombre y el tipo del string original para quedarnos con el resto
-                    string extra = "";
-                    int firstSpace = line.IndexOf(' ');
-                    if (firstSpace > 0)
-                    {
-                        int secondSpace = line.IndexOf(' ', firstSpace + 1);
-                        if (secondSpace > 0)
-                        {
-                            extra = line.Substring(secondSpace).Trim().TrimEnd(',');
-                        }
-                    }
-
-                    tableColumns.Add(new
-                    {
-                        campo = colName,
-                        tipo = colType,
-                        extra = extra
-                    });
                 }
 
-                finalTablesForJson.Add(new
-                {
-                    nombre = tableName,
-                    columnas = tableColumns
-                });
+                finalTables.Add(new { nombre = tableName, columnas = tableColumns });
             }
 
-            var options = new JsonSerializerOptions { WriteIndented = false };
-            return JsonSerializer.Serialize(finalTablesForJson, options);
+            return JsonSerializer.Serialize(finalTables, new JsonSerializerOptions { WriteIndented = false });
         }
 
         public Task<List<string>> SplitColumnsRespectingParentheses(string text)
         {
             var result = new List<string>();
-            int parenthesisLevel = 0;
-            var buffer = new StringBuilder();
-
+            int level = 0;
+            var sb = new StringBuilder();
             foreach (char c in text)
             {
-                if (c == '(') parenthesisLevel++;
-                if (c == ')') parenthesisLevel--;
-
-                if (c == ',' && parenthesisLevel == 0)
+                if (c == '(') level++;
+                if (c == ')') level--;
+                if (c == ',' && level == 0)
                 {
-                    result.Add(buffer.ToString());
-                    buffer.Clear();
+                    result.Add(sb.ToString());
+                    sb.Clear();
                 }
-                else
-                {
-                    buffer.Append(c);
-                }
+                else sb.Append(c);
             }
-
-            if (buffer.Length > 0) result.Add(buffer.ToString());
+            if (sb.Length > 0) result.Add(sb.ToString());
             return Task.FromResult(result);
         }
         #endregion

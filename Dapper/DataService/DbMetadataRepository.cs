@@ -152,169 +152,142 @@ namespace CapaDapper.DataService
 			}
 		}
 
-		#region mapear a json para crar db
-		public async Task<string> ParseSqlToSchemaJson(string fileContent, string dbName)
-		{
-			if (string.IsNullOrWhiteSpace(fileContent))
-				throw new ArgumentException("El contenido del archivo SQL está vacío.", nameof(fileContent));
+        #region mapear a json para crear db
+        public async Task<string> ParseSqlToSchemaJson(string fileContent, string dbName)
+        {
+            if (string.IsNullOrWhiteSpace(fileContent))
+                throw new ArgumentException("El contenido del archivo SQL está vacío.", nameof(fileContent));
 
-			// 1. LIMPIEZA
-			string cleanContent = fileContent.Replace("\r\n", "\n");
-			// Eliminar comentarios en bloque /* ... */
-			cleanContent = Regex.Replace(cleanContent, @"/\*[\s\S]*?\*/", string.Empty, RegexOptions.Singleline);
-			// Eliminar comentarios de línea --
-			cleanContent = Regex.Replace(cleanContent, @"--.*?$", string.Empty, RegexOptions.Multiline);
-			// Eliminar líneas INSERT INTO, USE, GO, SET
-			cleanContent = Regex.Replace(cleanContent, @"^\s*INSERT\s+INTO.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-			cleanContent = Regex.Replace(cleanContent, @"^\s*USE\s+.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-			cleanContent = Regex.Replace(cleanContent, @"^\s*GO\s*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-			cleanContent = Regex.Replace(cleanContent, @"^\s*SET\s+.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
-			cleanContent = cleanContent.Replace("[", "").Replace("]", "").Replace("\"", "").Replace("'", "");
+            // 1. LIMPIEZA
+            string cleanContent = fileContent.Replace("\r\n", "\n");
+            cleanContent = Regex.Replace(cleanContent, @"/\*[\s\S]*?\*/", string.Empty, RegexOptions.Singleline);
+            cleanContent = Regex.Replace(cleanContent, @"--.*?$", string.Empty, RegexOptions.Multiline);
 
-			// 2. DETECCIÓN DE TABLAS
-			var tableRegex = new Regex(@"CREATE\s+TABLE\s+(?:(\w+)\.)?(\w+)\s*\(([\s\S]+?)\)\s*;", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-			var matches = tableRegex.Matches(cleanContent);
+            // Eliminar comandos de sistema y limpieza de caracteres especiales
+            cleanContent = Regex.Replace(cleanContent, @"^\s*INSERT\s+INTO.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            cleanContent = Regex.Replace(cleanContent, @"^\s*USE\s+.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            cleanContent = Regex.Replace(cleanContent, @"^\s*GO\s*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            cleanContent = Regex.Replace(cleanContent, @"^\s*SET\s+.*?$", string.Empty, RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
-			if (matches.Count == 0)
-				throw new InvalidOperationException("No se encontraron tablas válidas en el SQL.");
+            // Quitamos corchetes para normalizar nombres
+            cleanContent = cleanContent.Replace("[", "").Replace("]", "");
 
-			var tablesList = new List<Dictionary<string, object>>();
-			var columnsList = new List<Dictionary<string, object>>();
-			var pkInfoList = new List<Dictionary<string, object>>();
+            // 2. DETECCIÓN DE TABLAS
+            // El Regex busca: CREATE TABLE Nombre ( contenido );
+            var tableRegex = new Regex(@"CREATE\s+TABLE\s+(?:(\w+)\.)?(\w+)\s*\(([\s\S]+?)\)\s*;", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var matches = tableRegex.Matches(cleanContent);
 
-			foreach (Match match in matches)
-			{
-				string schema = match.Groups[1].Success ? match.Groups[1].Value : "dbo";
-				if (schema.Equals("public", StringComparison.OrdinalIgnoreCase)) schema = "dbo";
-				string tableName = match.Groups[2].Success ? match.Groups[2].Value : "SinNombre";
-				string rawColumns = match.Groups[3].Success ? match.Groups[3].Value : string.Empty;
+            if (matches.Count == 0)
+                throw new InvalidOperationException("No se encontraron tablas válidas en el SQL.");
 
-				tablesList.Add(new Dictionary<string, object>
-				{
-					["Schema"] = schema,
-					["Table"] = tableName
-				});
+            var finalTablesForJson = new List<object>();
 
-				// 3. DETECCIÓN DE COLUMNAS
-				var lines = await SplitColumnsRespectingParentheses(rawColumns);
-				foreach (var rawLine in lines)
-				{
-					var line = rawLine.Trim();
-					if (string.IsNullOrEmpty(line)) continue;
+            foreach (Match match in matches)
+            {
+                string tableName = match.Groups[2].Value;
+                string rawColumns = match.Groups[3].Value;
 
-					var lineUpper = line.ToUpperInvariant();
+                var tableColumns = new List<object>();
+                var lines = await SplitColumnsRespectingParentheses(rawColumns);
 
-					// Manejo de constraints / primary key por separado
-					if (lineUpper.StartsWith("CONSTRAINT") || (lineUpper.StartsWith("PRIMARY KEY") && line.Contains("(")))
-					{
-						if (lineUpper.Contains("PRIMARY KEY"))
-						{
-							var pkMatch = Regex.Match(line, @"\(([^)]+)\)");
-							if (pkMatch.Success)
-							{
-								var pkCol = pkMatch.Groups[1].Value.Split(',')[0].Trim();
-								pkInfoList.Add(new Dictionary<string, object>
-								{
-									["Table"] = tableName,
-									["Column"] = pkCol
-								});
-							}
-						}
-						continue;
-					}
+                foreach (var rawLine in lines)
+                {
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrEmpty(line)) continue;
 
-					// Separar en partes por espacios (considerar tipos con paréntesis)
-					var parts = Regex.Split(line, @"\s+");
-					if (parts.Length < 2) continue;
+                    var lineUpper = line.ToUpperInvariant();
 
-					string colName = parts[0];
-					string colType = parts[1];
+                    // Saltamos constraints y primary keys manuales (el SP de SQL ya gestiona el ID y PK base)
+                    if (lineUpper.StartsWith("CONSTRAINT") || (lineUpper.StartsWith("PRIMARY KEY") && line.Contains("(")))
+                        continue;
 
-					if (colType.Contains("(") && !colType.Contains(")"))
-					{
-						var sb = new StringBuilder(colType);
-						for (int i = 2; i < parts.Length; i++)
-						{
-							sb.Append(parts[i]);
-							if (parts[i].Contains(")")) break;
-							sb.Append(' ');
-						}
-						colType = sb.ToString();
-					}
+                    var parts = Regex.Split(line, @"\s+");
+                    if (parts.Length < 2) continue;
 
-					colType = colType.Replace(" ", "").TrimEnd(',');
-					bool isIdentity = lineUpper.Contains("IDENTITY") || lineUpper.Contains("AUTO_INCREMENT");
-					string upperType = colType.ToUpperInvariant();
+                    string colName = parts[0];
 
-					if (upperType.StartsWith("INT") || upperType == "SERIAL") colType = "int";
-					else if (upperType == "TEXT") colType = "varchar(MAX)";
-					else if (upperType == "BOOL" || upperType == "BOOLEAN") colType = "bit";
-					else if (upperType == "DATETIME") colType = "datetime";
-					else if (upperType == "BLOB") colType = "varbinary(MAX)";
+                    // Si el nombre de la columna es igual a los automáticos del SP, los saltamos
+                    if (colName.ToLower() == "id" || colName.ToLower() == "usuario_creacion_id" || colName.ToLower() == "fecha_registro")
+                        continue;
 
-					columnsList.Add(new Dictionary<string, object>
-					{
-						["Table"] = tableName,
-						["Name"] = colName,
-						["Type"] = colType,
-						["Is_Identity"] = isIdentity
-					});
+                    string colType = parts[1];
 
-					if (lineUpper.Contains("PRIMARY KEY"))
-					{
-						pkInfoList.Add(new Dictionary<string, object>
-						{
-							["Table"] = tableName,
-							["Column"] = colName
-						});
-					}
-				}
-			}
+                    // Manejo de tipos con paréntesis como NVARCHAR(100)
+                    if (colType.Contains("(") && !colType.Contains(")"))
+                    {
+                        var sb = new StringBuilder(colType);
+                        for (int i = 2; i < parts.Length; i++)
+                        {
+                            sb.Append(parts[i]);
+                            if (parts[i].Contains(")")) break;
+                        }
+                        colType = sb.ToString();
+                    }
+                    colType = colType.TrimEnd(',');
 
-			// ESTRUCTURA FINAL EXACTA (clave "database_name" intencional)
-			var result = new Dictionary<string, object>
-			{
-				["database_name"] = dbName,
-				["Tables"] = tablesList,
-				["Columns"] = columnsList,
-				["Pk_Info"] = pkInfoList
-			};
+                    // Mapeo de tipos para compatibilidad
+                    string upperType = colType.ToUpperInvariant();
+                    if (upperType.StartsWith("INT") && lineUpper.Contains("IDENTITY")) colType = "INT";
+                    else if (upperType == "TEXT") colType = "NVARCHAR(MAX)";
+                    else if (upperType == "BOOL" || upperType == "BOOLEAN") colType = "BIT";
 
-			var options = new JsonSerializerOptions
-			{
-				WriteIndented = false
-			};
+                    // Capturar el resto de la línea como "extra" (NOT NULL, DEFAULT, etc.)
+                    // Quitamos el nombre y el tipo del string original para quedarnos con el resto
+                    string extra = "";
+                    int firstSpace = line.IndexOf(' ');
+                    if (firstSpace > 0)
+                    {
+                        int secondSpace = line.IndexOf(' ', firstSpace + 1);
+                        if (secondSpace > 0)
+                        {
+                            extra = line.Substring(secondSpace).Trim().TrimEnd(',');
+                        }
+                    }
 
-			return JsonSerializer.Serialize(result, options);
-		}
+                    tableColumns.Add(new
+                    {
+                        campo = colName,
+                        tipo = colType,
+                        extra = extra
+                    });
+                }
 
-		// Cambiado a público para cumplir la interfaz
-		public Task<List<string>> SplitColumnsRespectingParentheses(string text)
-		{
-			var result = new List<string>();
-			int parenthesisLevel = 0;
-			var buffer = new StringBuilder();
+                finalTablesForJson.Add(new
+                {
+                    nombre = tableName,
+                    columnas = tableColumns
+                });
+            }
 
-			for (int i = 0; i < text.Length; i++)
-			{
-				char c = text[i];
-				if (c == '(') parenthesisLevel++;
-				if (c == ')') parenthesisLevel--;
-				if (c == ',' && parenthesisLevel == 0)
-				{
-					result.Add(buffer.ToString());
-					buffer.Clear();
-				}
-				else
-				{
-					buffer.Append(c);
-				}
-			}
+            var options = new JsonSerializerOptions { WriteIndented = false };
+            return JsonSerializer.Serialize(finalTablesForJson, options);
+        }
 
-			if (buffer.Length > 0) result.Add(buffer.ToString());
-			return Task.FromResult(result);
-		}
+        public Task<List<string>> SplitColumnsRespectingParentheses(string text)
+        {
+            var result = new List<string>();
+            int parenthesisLevel = 0;
+            var buffer = new StringBuilder();
 
-		#endregion
-	}
+            foreach (char c in text)
+            {
+                if (c == '(') parenthesisLevel++;
+                if (c == ')') parenthesisLevel--;
+
+                if (c == ',' && parenthesisLevel == 0)
+                {
+                    result.Add(buffer.ToString());
+                    buffer.Clear();
+                }
+                else
+                {
+                    buffer.Append(c);
+                }
+            }
+
+            if (buffer.Length > 0) result.Add(buffer.ToString());
+            return Task.FromResult(result);
+        }
+        #endregion
+    }
 }

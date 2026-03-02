@@ -22,8 +22,6 @@ builder.Services.AddScoped<DynamicCrudService>();
 
 builder.Services.AddHttpContextAccessor();
 
-//  fin services
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -40,7 +38,6 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-// ? IMPORTANTE: UseAuthentication ANTES de UseAuthorization
 app.UseAuthentication();
 app.UseAuthorization();
 

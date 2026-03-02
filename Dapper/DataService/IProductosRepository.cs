@@ -2,6 +2,9 @@ using CapaDapper.Entidades.Productos;
 
 namespace CapaDapper.DataService
 {
+    /// <summary>
+    /// Defines the data-access contract for products, categories, suppliers, and inventory.
+    /// </summary>
     public interface IProductosRepository
     {
         #region Productos

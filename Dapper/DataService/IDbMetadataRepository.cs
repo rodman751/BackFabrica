@@ -8,23 +8,18 @@ using System.Threading.Tasks;
 
 namespace CapaDapper.DataService
 {
+    /// <summary>
+    /// Defines the contract for database metadata operations including schema discovery,
+    /// module creation, connection string resolution, and SQL parsing.
+    /// </summary>
     public interface IDbMetadataRepository
     {
         string CreateConnectionString(string dbName);
         IDbConnection CreateConnection(string dbName);
-        // 1. Devuelve la lista de nombres de bases de datos disponibles
         Task<IEnumerable<string>> ObtenerNombresDeBasesDeDatosAsync();
-
-        // 2. Se conecta a la DB específica y extrae el JSON del esquema
         Task<string> ObtenerEsquemaJsonAsync(string nombreBaseDatos);
-
         Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request);
-
-
         Task<string> ParseSqlToSchemaJson(string fileContent, string dbName);
         Task<List<string>> SplitColumnsRespectingParentheses(string text);
-
-
-
-	}
+    }
 }

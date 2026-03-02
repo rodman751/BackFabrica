@@ -1,4 +1,4 @@
-﻿using CapaDapper.Cadena;
+using CapaDapper.Cadena;
 using CapaDapper.Dtos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -9,44 +9,47 @@ using System.Text;
 
 namespace Services
 {
-
+    /// <summary>
+    /// Implements the authentication business logic layer.
+    /// Delegates credential validation to <see cref="IAuthRepository"/> and, on success,
+    /// issues a signed JWT token configured from application settings.
+    /// </summary>
     public class AuthService : IAuthService
     {
         private readonly IConfiguration _config;
         private readonly IAuthRepository _repository;
 
-
         public AuthService(IConfiguration config, IAuthRepository repository)
         {
             _config = config;
             _repository = repository;
- 
         }
 
+        /// <summary>
+        /// Validates the supplied credentials and returns a JWT token along with user profile data.
+        /// Throws <see cref="UnauthorizedAccessException"/> when the credentials are invalid.
+        /// </summary>
+        /// <param name="usuario">Username to authenticate.</param>
+        /// <param name="password">Plain-text password to validate against the stored hash.</param>
+        /// <returns>A <see cref="LoginResponseDto"/> containing the JWT token and user information.</returns>
         public async Task<LoginResponseDto> LoginAsync(string usuario, string password)
         {
-            // 1. Validar contra la Base de Datos (usando tu Repo con Dapper)
             var user = await _repository.ValidarUserPassAsync(usuario, password);
 
-            // Si el usuario no existe o las credenciales son incorrectas
             if (user.EsExitoso == false)
             {
                 throw new UnauthorizedAccessException(user.Mensaje);
             }
 
-            // 2. Crear los "Claims" (La información que va DENTRO del token)
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Usuario.Id.ToString()), // ID del usuario
-                new Claim(ClaimTypes.Name, user.Usuario.Username),                 // Nombre de usuario
-
+                new Claim(ClaimTypes.NameIdentifier, user.Usuario.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Usuario.Username),
             };
 
-            // 3. Crear la llave de seguridad (debe coincidir con appsettings)
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // 4. Configurar el Token
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
@@ -55,7 +58,6 @@ namespace Services
                 signingCredentials: creds
             );
 
-            // 5. Retornar token + datos del usuario
             return new LoginResponseDto
             {
                 Token = new JwtSecurityTokenHandler().WriteToken(token),

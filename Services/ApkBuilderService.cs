@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -6,10 +6,29 @@ using System.Threading.Tasks;
 
 namespace Services
 {
+    /// <summary>
+    /// Orchestrates the end-to-end Flutter APK build pipeline.
+    /// Injects a database schema into the Flutter project configuration file,
+    /// invokes the Flutter toolchain to produce a release APK, and packages
+    /// the .NET and Flutter source trees into ZIP archives for distribution.
+    /// The configuration file is always restored to its original placeholder content
+    /// in a <c>finally</c> block, regardless of build outcome.
+    /// </summary>
     public class ApkBuilderService
     {
         private readonly string _flutterProjectPath = @"D:\Desarrollo\Flutter\herramienta_case\herramienta_case";
 
+        /// <summary>
+        /// Generates a release APK for the specified database by injecting its schema into
+        /// <c>app_build_config.dart</c> and running the Flutter build toolchain.
+        /// Also produces ZIP archives of the .NET backend and the Flutter source code.
+        /// </summary>
+        /// <param name="dbName">Name of the target database used to label output files.</param>
+        /// <param name="jsonSchema">JSON schema string to embed in the Flutter configuration file.</param>
+        /// <returns>
+        /// An <see cref="ApkBuildResult"/> containing the paths to the APK,
+        /// the .NET source archive, and the Flutter source archive.
+        /// </returns>
         public async Task<ApkBuildResult> GenerarApkAsync(string dbName, string jsonSchema)
         {
             string pathConfigFile = Path.Combine(_flutterProjectPath, "lib", "core", "config", "app_build_config.dart");
@@ -27,13 +46,8 @@ namespace Services
 
                 await File.WriteAllTextAsync(pathConfigFile, nuevoContenido);
 
-                // Generar APK
                 string apkPath = await RunFlutterBuild(useClean: false);
-
-                // Exportar código fuente de la solución .NET
                 string zipPathDotNet = await ExportarCodigoFuenteAsync(dbName);
-
-                // Exportar código fuente de Flutter
                 string zipPathFlutter = await ExportarCodigoFlutterAsync(dbName);
 
                 return new ApkBuildResult
@@ -49,13 +63,17 @@ namespace Services
             }
         }
 
+        /// <summary>
+        /// Creates a ZIP archive of the .NET backend solution, excluding build artefacts
+        /// and IDE metadata folders (<c>bin</c>, <c>obj</c>, <c>.vs</c>, <c>.git</c>, etc.).
+        /// </summary>
+        /// <param name="dbName">Database name used to label the output ZIP file.</param>
+        /// <returns>Absolute path to the generated ZIP archive.</returns>
         private async Task<string> ExportarCodigoFuenteAsync(string dbName)
         {
-            // Obtener la ruta raíz de la solución (ajusta según tu estructura)
             string solutionPath = Directory.GetCurrentDirectory();
             string parentDirectory = Directory.GetParent(solutionPath)?.FullName ?? solutionPath;
 
-            // Crear carpeta temporal para los exports
             string exportFolder = Path.Combine(Path.GetTempPath(), "BackFabrica_Exports");
             Directory.CreateDirectory(exportFolder);
 
@@ -67,7 +85,6 @@ namespace Services
             {
                 using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
                 {
-                    // Agregar todos los archivos de la solución, excluyendo carpetas innecesarias
                     AgregarArchivosAlZip(parentDirectory, archive, parentDirectory);
                 }
             });
@@ -75,9 +92,14 @@ namespace Services
             return zipPath;
         }
 
+        /// <summary>
+        /// Creates a ZIP archive of the Flutter project, excluding build artefacts
+        /// and tool-generated folders (<c>build</c>, <c>.dart_tool</c>, <c>.git</c>, etc.).
+        /// </summary>
+        /// <param name="dbName">Database name used to label the output ZIP file.</param>
+        /// <returns>Absolute path to the generated ZIP archive.</returns>
         private async Task<string> ExportarCodigoFlutterAsync(string dbName)
         {
-            // Crear carpeta temporal para los exports
             string exportFolder = Path.Combine(Path.GetTempPath(), "BackFabrica_Expoorts");
             Directory.CreateDirectory(exportFolder);
 
@@ -89,7 +111,6 @@ namespace Services
             {
                 using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
                 {
-                    // Agregar todos los archivos del proyecto Flutter, excluyendo carpetas innecesarias
                     AgregarArchivosFlutterAlZip(_flutterProjectPath, archive, _flutterProjectPath);
                 }
             });
@@ -97,9 +118,15 @@ namespace Services
             return zipPath;
         }
 
+        /// <summary>
+        /// Recursively adds Flutter project files to a ZIP archive,
+        /// skipping excluded folders and lock files.
+        /// </summary>
+        /// <param name="directoryPath">Current directory being processed.</param>
+        /// <param name="archive">Target ZIP archive.</param>
+        /// <param name="baseDirectory">Root directory used to compute relative entry paths.</param>
         private void AgregarArchivosFlutterAlZip(string directoryPath, ZipArchive archive, string baseDirectory)
         {
-            // Carpetas y archivos a excluir específicos de Flutter
             string[] excludedFolders = { "build", ".dart_tool", ".idea", ".git", "android/.gradle", "ios/Pods", ".fvm" };
             string[] excludedFiles = { ".lock" };
 
@@ -107,7 +134,6 @@ namespace Services
             {
                 string fileName = Path.GetFileName(filePath);
 
-                // Excluir archivos temporales
                 if (Array.Exists(excludedFiles, ext => fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
                     continue;
 
@@ -119,7 +145,6 @@ namespace Services
             {
                 string folderName = Path.GetFileName(subdirectory);
 
-                // Excluir carpetas de build y temporales de Flutter
                 if (Array.Exists(excludedFolders, folder => folder.Equals(folderName, StringComparison.OrdinalIgnoreCase)))
                     continue;
 
@@ -127,9 +152,15 @@ namespace Services
             }
         }
 
+        /// <summary>
+        /// Recursively adds .NET solution files to a ZIP archive,
+        /// skipping build output and IDE metadata folders.
+        /// </summary>
+        /// <param name="directoryPath">Current directory being processed.</param>
+        /// <param name="archive">Target ZIP archive.</param>
+        /// <param name="baseDirectory">Root directory used to compute relative entry paths.</param>
         private void AgregarArchivosAlZip(string directoryPath, ZipArchive archive, string baseDirectory)
         {
-            // Carpetas y archivos a excluir
             string[] excludedFolders = { "bin", "obj", ".vs", ".git", "node_modules", "packages" };
             string[] excludedFiles = { ".suo", ".user" };
 
@@ -137,7 +168,6 @@ namespace Services
             {
                 string fileName = Path.GetFileName(filePath);
 
-                // Excluir archivos temporales
                 if (Array.Exists(excludedFiles, ext => fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
                     continue;
 
@@ -149,7 +179,6 @@ namespace Services
             {
                 string folderName = Path.GetFileName(subdirectory);
 
-                // Excluir carpetas de build y temporales
                 if (Array.Exists(excludedFolders, folder => folder.Equals(folderName, StringComparison.OrdinalIgnoreCase)))
                     continue;
 
@@ -157,12 +186,21 @@ namespace Services
             }
         }
 
+        /// <summary>
+        /// Executes the Flutter build command and returns the path to the compiled APK.
+        /// Optionally runs <c>flutter clean</c> before building.
+        /// </summary>
+        /// <param name="useClean">
+        /// When <c>true</c>, the build is preceded by <c>flutter clean</c>.
+        /// Defaults to <c>false</c> for faster incremental builds.
+        /// </param>
+        /// <returns>Absolute path to the generated <c>app-release.apk</c>.</returns>
+        /// <exception cref="Exception">Thrown when the Flutter process exits with a non-zero code.</exception>
         private async Task<string> RunFlutterBuild(bool useClean = false)
         {
-            // Comando optimizado: solo clean cuando sea necesario
             string command = useClean
                 ? "/c call flutter clean & call flutter build apk --release"
-                : "/c call flutter build apk --release --no-tree-shake-icons"; // Más rápido
+                : "/c call flutter build apk --release --no-tree-shake-icons";
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
@@ -202,10 +240,16 @@ namespace Services
         }
     }
 
+    /// <summary>
+    /// Holds the file system paths for the artefacts produced by a completed APK build.
+    /// </summary>
     public class ApkBuildResult
     {
+        /// <summary>Absolute path to the compiled <c>app-release.apk</c> file.</summary>
         public string ApkPath { get; set; }
+        /// <summary>Absolute path to the .NET backend source code ZIP archive.</summary>
         public string SourceCodeZipPath { get; set; }
+        /// <summary>Absolute path to the Flutter source code ZIP archive.</summary>
         public string FlutterSourceCodeZipPath { get; set; }
     }
 }

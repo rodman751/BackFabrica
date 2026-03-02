@@ -1,4 +1,4 @@
-﻿using CapaDapper.DataService;
+using CapaDapper.DataService;
 using GenAPK.Models;
 using Microsoft.AspNetCore.Mvc;
 using Services;
@@ -6,6 +6,11 @@ using System.Text;
 
 namespace GenAPK.Controllers
 {
+    /// <summary>
+    /// Orchestrates APK generation for the GenAPK MVC application.
+    /// Retrieves database schemas, triggers the Flutter build pipeline,
+    /// and exposes download endpoints for the compiled APK and source code archives.
+    /// </summary>
     public class GeneradorController : Controller
     {
         private readonly IDbMetadataRepository _repository;
@@ -17,11 +22,15 @@ namespace GenAPK.Controllers
             _apkService = apkService;
         }
 
+        /// <summary>
+        /// Displays the APK generator view, populated with available databases
+        /// from the currently selected connection profile.
+        /// Redirects to the login view when no connection profile has been selected.
+        /// </summary>
         public async Task<IActionResult> Index()
         {
             try
             {
-                // Verificar si hay un perfil seleccionado
                 var profileKeyBytes = HttpContext.Session.Get("SelectedProfile");
                 if (profileKeyBytes == null || profileKeyBytes.Length == 0)
                 {
@@ -43,12 +52,15 @@ namespace GenAPK.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns the list of available databases for the active connection profile as JSON.
+        /// Returns an error payload when no profile is stored in the session.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetDatabases()
         {
             try
             {
-                // Verificar perfil seleccionado
                 var profileKeyBytes = HttpContext.Session.Get("SelectedProfile");
                 if (profileKeyBytes == null || profileKeyBytes.Length == 0)
                 {
@@ -64,8 +76,10 @@ namespace GenAPK.Controllers
             }
         }
 
-        // ... resto del código sin cambios ...
-
+        /// <summary>
+        /// Returns the JSON schema for the specified database.
+        /// </summary>
+        /// <param name="selectedDb">Name of the target database.</param>
         [HttpGet]
         public async Task<IActionResult> GetJson(string selectedDb)
         {
@@ -83,6 +97,12 @@ namespace GenAPK.Controllers
             }
         }
 
+        /// <summary>
+        /// Generates a release APK for the specified database by injecting its schema into
+        /// the Flutter project configuration and invoking the build pipeline.
+        /// On success, stores artifact paths in <c>TempData</c> and redirects to <see cref="Descargar"/>.
+        /// </summary>
+        /// <param name="selectedDb">Name of the target database used to configure the Flutter app.</param>
         [HttpPost]
         public async Task<IActionResult> GenerarApk(string selectedDb)
         {
@@ -125,6 +145,10 @@ namespace GenAPK.Controllers
             }
         }
 
+        /// <summary>
+        /// Displays the download page for the artifacts produced by the most recent build.
+        /// Redirects to the generator view when no build artifacts are available.
+        /// </summary>
         public IActionResult Descargar()
         {
             if (TempData.Peek("ApkPath") == null)
@@ -142,6 +166,9 @@ namespace GenAPK.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Streams the compiled APK file to the browser as a downloadable attachment.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> DescargarApk()
         {
@@ -162,6 +189,9 @@ namespace GenAPK.Controllers
             return File(fileBytes, "application/vnd.android.package-archive", nombreArchivo);
         }
 
+        /// <summary>
+        /// Streams the .NET backend source code archive to the browser as a downloadable attachment.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> DescargarZip()
         {
@@ -182,6 +212,9 @@ namespace GenAPK.Controllers
             return File(fileBytes, "application/zip", nombreArchivo);
         }
 
+        /// <summary>
+        /// Streams the Flutter source code archive to the browser as a downloadable attachment.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> DescargarFlutterZip()
         {

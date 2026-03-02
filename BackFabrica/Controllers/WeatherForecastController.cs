@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BackFabrica.Controllers
 {
+    /// <summary>
+    /// Default ASP.NET scaffold controller. Not used by the application.
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
@@ -18,6 +21,7 @@ namespace BackFabrica.Controllers
             _logger = logger;
         }
 
+        /// <summary>Returns a random 5-day weather forecast. Scaffold endpoint, not used in production.</summary>
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {

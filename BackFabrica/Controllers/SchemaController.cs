@@ -1,9 +1,13 @@
-﻿using CapaDapper.DataService;
+using CapaDapper.DataService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackFabrica.Controllers
 {
+    /// <summary>
+    /// Exposes database metadata endpoints used by the Flutter client to
+    /// discover available databases and retrieve their schema definitions.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class SchemaController : ControllerBase
@@ -15,8 +19,11 @@ namespace BackFabrica.Controllers
             _repository = repository;
         }
 
+        /// <summary>
+        /// Returns the names of all user databases available on the server.
+        /// The client uses this list to populate the database selection dropdown.
+        /// </summary>
         // GET: api/schema/databases
-        // Este lo llamas primero para llenar el "Select/Dropdown" en la App Móvil
         [HttpGet("databases")]
         public async Task<IActionResult> GetDatabases()
         {
@@ -24,8 +31,12 @@ namespace BackFabrica.Controllers
             return Ok(dbs);
         }
 
+        /// <summary>
+        /// Returns the full JSON schema for the specified database,
+        /// including tables, columns, primary keys, and foreign keys.
+        /// </summary>
+        /// <param name="db">Name of the target database.</param>
         // GET: api/schema/generate?db=VentasDB
-        // Este lo llamas cuando el usuario selecciona una y le da a "Generar App"
         [HttpGet("generate")]
         public async Task<IActionResult> GetSchema([FromQuery] string db)
         {
@@ -34,15 +45,11 @@ namespace BackFabrica.Controllers
 
             try
             {
-                // Dapper se conecta a esa DB y trae el JSON
                 var jsonSchema = await _repository.ObtenerEsquemaJsonAsync(db);
-
-                // Retornamos el JSON tal cual (Content devuelve string como application/json)
                 return Content(jsonSchema, "application/json");
             }
             catch (Exception ex)
             {
-                // Manejo de errores (por si la DB no existe o no hay acceso)
                 return BadRequest($"Error al conectar con la base de datos '{db}': {ex.Message}");
             }
         }

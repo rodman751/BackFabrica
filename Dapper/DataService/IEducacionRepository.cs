@@ -3,6 +3,10 @@ using CapaDapper.Entidades.Educacion;
 
 namespace CapaDapper.DataService
 {
+    /// <summary>
+    /// Defines the data-access contract for the education domain:
+    /// students, teachers, courses, enrollments, grades, and academic history.
+    /// </summary>
     public interface IEducacionRepository
     {
         #region Estudiantes

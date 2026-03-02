@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Text;
 
 namespace GenAPK.Controllers
 {
+    /// <summary>
+    /// Manages server connection profile selection for the GenAPK MVC application.
+    /// Stores the selected profile in the HTTP session for use across subsequent requests.
+    /// </summary>
     public class LoginController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -13,9 +17,12 @@ namespace GenAPK.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Displays the connection profile selection view,
+        /// populated with all profiles defined in <c>appsettings.json</c>.
+        /// </summary>
         public IActionResult Index()
         {
-            // Cargar perfiles desde appsettings.json
             var profiles = new Dictionary<string, ProfileInfo>();
             var profilesSection = _configuration.GetSection("ConnectionProfiles");
 
@@ -31,12 +38,16 @@ namespace GenAPK.Controllers
             return View(profiles);
         }
 
+        /// <summary>
+        /// Tests connectivity for the specified connection profile.
+        /// On success, persists the profile key in the session and returns HTTP 200.
+        /// </summary>
+        /// <param name="request">Contains the profile key to test.</param>
         [HttpPost]
         public async Task<IActionResult> TestProfile([FromBody] TestProfileRequest request)
         {
             try
             {
-                // Obtener el perfil
                 var connectionString = _configuration[$"ConnectionProfiles:{request.ProfileKey}:ConnectionString"];
 
                 if (string.IsNullOrEmpty(connectionString))
@@ -44,14 +55,11 @@ namespace GenAPK.Controllers
                     return Json(new { success = false, message = "Perfil no encontrado" });
                 }
 
-                // Formatear con base de datos master para prueba
                 connectionString = string.Format(connectionString, "master");
 
-                // Probar conexión
                 using var connection = new SqlConnection(connectionString);
                 await connection.OpenAsync();
 
-                // Guardar en sesión
                 HttpContext.Session.Set("SelectedProfile", Encoding.UTF8.GetBytes(request.ProfileKey));
 
                 return Json(new

@@ -1,4 +1,4 @@
-﻿using CapaDapper.Dtos;
+using CapaDapper.Dtos;
 using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
@@ -13,6 +13,11 @@ using System.Threading.Tasks;
 
 namespace CapaDapper.DataService
 {
+	/// <summary>
+	/// Provides database metadata operations including schema discovery, module creation,
+	/// and connection string resolution. Resolves the active server connection profile from
+	/// the HTTP request context to support multiple deployment targets at runtime.
+	/// </summary>
 	public class DbMetadataRepository : IDbMetadataRepository
 	{
 		private readonly IConfiguration _configuration;
@@ -25,8 +30,8 @@ namespace CapaDapper.DataService
 		}
 
 		/// <summary>
-		/// Obtiene la cadena de conexión del perfil seleccionado en la sesión
-		/// Si no hay perfil seleccionado, usa TemplateConnection por defecto
+		/// Resolves the ADO.NET connection template string for the active connection profile.
+		/// Priority: X-Connection-Profile header (API/APK) > session value (MVC) > default TemplateConnection.
 		/// </summary>
 		private string ObtenerConnectionTemplate()
 		{
@@ -34,7 +39,6 @@ namespace CapaDapper.DataService
 			{
 				var httpContext = _httpContextAccessor.HttpContext;
 
-				// 1. PRIORIDAD ALTA: Leer perfil desde el header X-Connection-Profile (para API/APK)
 				if (httpContext?.Request?.Headers != null && httpContext.Request.Headers.ContainsKey("X-Connection-Profile"))
 				{
 					var headerValue = httpContext.Request.Headers["X-Connection-Profile"].ToString();
@@ -48,7 +52,6 @@ namespace CapaDapper.DataService
 					}
 				}
 
-				// 2. PRIORIDAD MEDIA: Leer perfil desde la sesión (para MVC)
 				var session = httpContext?.Session;
 				if (session != null)
 				{
@@ -67,23 +70,36 @@ namespace CapaDapper.DataService
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"Error al leer perfil de conexión: {ex.Message}");
+				_ = ex;
 			}
 
-			// 3. Fallback: usar TemplateConnection por defecto
 			return _configuration.GetConnectionString("TemplateConnection");
 		}
 
+		/// <summary>
+		/// Builds a fully-qualified ADO.NET connection string for the specified database
+		/// by substituting the database name into the resolved connection template.
+		/// </summary>
+		/// <param name="dbName">Name of the target database.</param>
+		/// <returns>A ready-to-use connection string.</returns>
 		public string CreateConnectionString(string dbName)
 		{
 			var template = ObtenerConnectionTemplate();
 			return string.Format(template, dbName);
 		}
 
+		/// <summary>
+		/// Creates and returns a new <see cref="IDbConnection"/> for the specified database.
+		/// </summary>
+		/// <param name="dbName">Name of the target database.</param>
 		public IDbConnection CreateConnection(string dbName) =>
 			new SqlConnection(CreateConnectionString(dbName));
 
 		#region CConfig conexion
+		/// <summary>
+		/// Creates an unopened <see cref="IDbConnection"/> targeting the specified database
+		/// using the resolved connection profile template.
+		/// </summary>
 		private IDbConnection CrearConexion(string baseDatos)
 		{
 			var template = ObtenerConnectionTemplate();
@@ -91,30 +107,34 @@ namespace CapaDapper.DataService
 			return new SqlConnection(connectionString);
 		}
 
+		/// <summary>
+		/// Returns the names of all user databases on the server (database_id &gt; 4),
+		/// ordered alphabetically. Executes against the <c>master</c> database.
+		/// </summary>
 		public async Task<IEnumerable<string>> ObtenerNombresDeBasesDeDatosAsync()
 		{
-			// Nos conectamos a 'master' para ver qué bases de datos existen
 			using (var connection = CrearConexion("master"))
 			{
-				// Filtramos database_id > 4 para no traer las del sistema (master, tempdb, etc.)
 				var query = "SELECT name FROM sys.databases WHERE database_id > 4 ORDER BY name";
-
-				// Le damos un poco más de tiempo también al listado (60 seg)
 				return await connection.QueryAsync<string>(query, commandTimeout: 60);
 			}
 		}
 
+		/// <summary>
+		/// Executes the <c>sp_GetDatabaseSchema</c> stored procedure against the specified database
+		/// and returns its full JSON schema (tables, columns, primary keys, and foreign keys).
+		/// Uses a 180-second command timeout to accommodate large databases.
+		/// </summary>
+		/// <param name="nombreBaseDatos">Name of the database whose schema is requested.</param>
+		/// <returns>A JSON string representing the complete database schema.</returns>
 		public async Task<string> ObtenerEsquemaJsonAsync(string nombreBaseDatos)
 		{
-			// 1. Nos conectamos DIRECTAMENTE a la base de datos que eligió el usuario
 			using (var connection = CrearConexion(nombreBaseDatos))
 			{
-				// 2. Ejecutamos el Store Procedure
-				// SOLUCIÓN AL TIMEOUT: Agregamos commandTimeout: 180
 				var resultado = await connection.QueryFirstOrDefaultAsync<string>(
 					"sp_GetDatabaseSchema",
 					commandType: CommandType.StoredProcedure,
-					commandTimeout: 180 // <--- 3 MINUTOS DE ESPERA (CRÍTICO)
+					commandTimeout: 180
 				);
 
 				return resultado;
@@ -123,6 +143,12 @@ namespace CapaDapper.DataService
 
 		#endregion
 
+		/// <summary>
+		/// Invokes the <c>sp_Master_CrearModuloCompleto</c> stored procedure to create
+		/// a new database module (schema, tables, security objects, and CRUD stored procedures).
+		/// Returns <c>false</c> on failure without propagating the exception.
+		/// </summary>
+		/// <param name="request">Module creation request containing the database name and JSON table definitions.</param>
 		public async Task<bool> CrearNuevoModuloAsync(RequestCrearModuloDto request)
 		{
 			using var connection = CrearConexion("master");
@@ -135,36 +161,40 @@ namespace CapaDapper.DataService
 
 			try
 			{
-				// Llamamos al SP Maestro
-				// También aumentamos el tiempo aquí por seguridad
 				await connection.ExecuteAsync("sp_Master_CrearModuloCompleto",
 					parametros,
 					commandType: System.Data.CommandType.StoredProcedure,
-					commandTimeout: 180); // <--- 3 MINUTOS PARA CREAR TABLAS
+					commandTimeout: 180);
 
 				return true;
 			}
 			catch (Exception ex)
 			{
-				// Loguear error: ex.Message
-				Console.WriteLine($"Error en CrearNuevoModuloAsync: {ex.Message}");
+				_ = ex;
 				return false;
 			}
 		}
 
         #region mapear a json para crear db
+        /// <summary>
+        /// Parses a SQL DDL file and converts its <c>CREATE TABLE</c> statements into the
+        /// JSON format expected by <c>sp_Master_CrearModuloCompleto</c>.
+        /// Strips SQL comments, removes bracket delimiters, and skips auto-generated columns
+        /// (<c>id</c>, <c>usuario_creacion_id</c>, <c>fecha_registro</c>).
+        /// </summary>
+        /// <param name="fileContent">Raw SQL DDL content to parse.</param>
+        /// <param name="dbName">Target database name (reserved for future use in the output schema).</param>
+        /// <returns>A compact JSON array of table definitions with column metadata.</returns>
         public async Task<string> ParseSqlToSchemaJson(string fileContent, string dbName)
         {
             if (string.IsNullOrWhiteSpace(fileContent))
                 throw new ArgumentException("El contenido está vacío.");
 
-            // 1. Limpieza inicial
             string cleanContent = fileContent.Replace("\r\n", "\n");
             cleanContent = Regex.Replace(cleanContent, @"/\*[\s\S]*?\*/", string.Empty, RegexOptions.Singleline);
             cleanContent = Regex.Replace(cleanContent, @"--.*?$", string.Empty, RegexOptions.Multiline);
             cleanContent = cleanContent.Replace("[", "").Replace("]", "");
 
-            // 2. Detección de tablas
             var tableRegex = new Regex(@"CREATE\s+TABLE\s+(?:(\w+)\.)?(\w+)\s*\(([\s\S]+?)\)\s*;", RegexOptions.IgnoreCase | RegexOptions.Singleline);
             var matches = tableRegex.Matches(cleanContent);
 
@@ -182,8 +212,6 @@ namespace CapaDapper.DataService
                 {
                     if (line.ToUpper().StartsWith("CONSTRAINT") || line.ToUpper().StartsWith("PRIMARY KEY (")) continue;
 
-                    // Regex mejorado para capturar Nombre Tipo(Largo) Resto
-                    // Ejemplo: [Precio] [DECIMAL](10,2) [NOT NULL]
                     var colRegex = new Regex(@"^(\w+)\s+([\w\(\),]+)(.*)$", RegexOptions.IgnoreCase);
                     var colMatch = colRegex.Match(line);
 
@@ -193,7 +221,6 @@ namespace CapaDapper.DataService
                         string colType = colMatch.Groups[2].Value;
                         string extra = colMatch.Groups[3].Value.Trim().TrimEnd(',');
 
-                        // Saltamos columnas que el SP ya crea por defecto
                         if (new[] { "id", "usuario_creacion_id", "fecha_registro" }.Contains(colName.ToLower()))
                             continue;
 
@@ -212,6 +239,13 @@ namespace CapaDapper.DataService
             return JsonSerializer.Serialize(finalTables, new JsonSerializerOptions { WriteIndented = false });
         }
 
+        /// <summary>
+        /// Splits a raw SQL column definition block into individual column entries,
+        /// respecting nested parentheses so that type declarations such as
+        /// <c>DECIMAL(10, 2)</c> are not split on their internal commas.
+        /// </summary>
+        /// <param name="text">Raw column definitions extracted from a <c>CREATE TABLE</c> statement.</param>
+        /// <returns>A list of individual column definition strings.</returns>
         public Task<List<string>> SplitColumnsRespectingParentheses(string text)
         {
             var result = new List<string>();

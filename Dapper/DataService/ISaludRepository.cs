@@ -2,6 +2,10 @@ using CapaDapper.Entidades.Salud;
 
 namespace CapaDapper.DataService
 {
+    /// <summary>
+    /// Defines the data-access contract for the healthcare domain:
+    /// patients, physicians, appointments, and diagnoses.
+    /// </summary>
     public interface ISaludRepository
     {
         #region Pacientes
@@ -22,7 +26,6 @@ namespace CapaDapper.DataService
         #endregion
 
         #region Citas y Diagnosticos
-        // Citas
         Task<IEnumerable<Cita>> ObtenerCitasAsync();
         Task<Cita> ObtenerCitaPorIdAsync(int id);
         Task<bool> AgendarCitaAsync(Cita cita);
@@ -30,7 +33,6 @@ namespace CapaDapper.DataService
         Task<bool> ActualizarCitaAsync(Cita cita);
         Task<bool> EliminarCitaAsync(int id);
 
-        // Diagnosticos
         Task<IEnumerable<Diagnostico>> ObtenerDiagnosticosAsync();
         Task<Diagnostico> ObtenerDiagnosticoPorIdAsync(int id);
         Task<bool> RegistrarDiagnosticoAsync(Diagnostico diagnostico);

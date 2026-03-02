@@ -8,6 +8,11 @@ using System.Text.RegularExpressions;
 
 namespace GenAPK.Controllers
 {
+	/// <summary>
+	/// Handles the home view and SQL-to-module import workflow for the GenAPK MVC application.
+	/// Accepts a SQL schema file, parses it into the JSON format expected by the database
+	/// stored procedure, and delegates module creation to <see cref="IDbMetadataRepository"/>.
+	/// </summary>
 	public class HomeController : Controller
 	{
 		private readonly ILogger<HomeController> _logger;
@@ -19,19 +24,30 @@ namespace GenAPK.Controllers
 			_dbMetadataRepository = dbMetadataRepository;
 		}
 
+		/// <summary>
+		/// Renders the application home page.
+		/// </summary>
 		public IActionResult Index()
 		{
 			return View();
 		}
 
+		/// <summary>
+		/// Renders the privacy information page.
+		/// </summary>
 		public IActionResult Privacy()
 		{
 			return View();
 		}
 
 		/// <summary>
-		/// Procesa el archivo SQL/TXT importado y crea el módulo completo
+		/// Processes an uploaded SQL or TXT file and creates a full database module,
+		/// including tables, security objects, and stored procedures.
+		/// Parses the SQL content into the JSON schema format expected by the backend
+		/// stored procedure before delegating module creation.
 		/// </summary>
+		/// <param name="archivoSql">The uploaded SQL or TXT file containing the schema definition.</param>
+		/// <param name="nombreDb">Name to assign to the new database module.</param>
 		[HttpPost]
 		public async Task<IActionResult> ImportarDb(IFormFile archivoSql, string nombreDb)
 		{
@@ -82,7 +98,7 @@ namespace GenAPK.Controllers
 				catch (Exception parseEx)
 				{
 					_logger.LogError(parseEx, "Error al parsear el SQL a JSON");
-					return Json(new { success = false, message = $"❌ Error al parsear el archivo SQL: {parseEx.Message}" });
+					return Json(new { success = false, message = $"Error al parsear el archivo SQL: {parseEx.Message}" });
 				}
 
 				request.JsonTablas = jsonTablas;
@@ -95,19 +111,19 @@ namespace GenAPK.Controllers
 					return Json(new
 					{
 						success = true,
-						message = $"✅ Módulo '{nombreDb}' creado exitosamente con todas las tablas, seguridad y stored procedures.",
+						message = $"Módulo '{nombreDb}' creado exitosamente con todas las tablas, seguridad y stored procedures.",
 						nombreDb = nombreDb
 					});
 				}
 				else
 				{
-					return Json(new { success = false, message = "❌ Error al crear el módulo. Revise los logs del servidor." });
+					return Json(new { success = false, message = "Error al crear el módulo. Revise los logs del servidor." });
 				}
 			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Error al importar DB");
-				return Json(new { success = false, message = $"❌ Error: {ex.Message}" });
+				return Json(new { success = false, message = $"Error: {ex.Message}" });
 			}
 		}
 

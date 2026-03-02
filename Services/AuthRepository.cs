@@ -1,4 +1,4 @@
-﻿using CapaDapper.Cadena;
+using CapaDapper.Cadena;
 using CapaDapper.Dtos;
 using Dapper;
 using System;
@@ -10,6 +10,11 @@ using System.Threading.Tasks;
 
 namespace Services
 {
+    /// <summary>
+    /// Provides data-access operations for user authentication.
+    /// Executes the <c>sp_ValidarLoginFinal</c> stored procedure against the
+    /// <c>master</c> database, which is the central user registry for all modules.
+    /// </summary>
     public class AuthRepository : IAuthRepository
     {
         private readonly IDbConnectionFactory _connectionFactory;
@@ -19,8 +24,19 @@ namespace Services
             _connectionFactory = connectionFactory;
         }
 
-
         #region Validar Login
+        /// <summary>
+        /// Validates the supplied username and password hash against the stored credentials
+        /// by invoking <c>sp_ValidarLoginFinal</c>.
+        /// Returns a failed result object instead of throwing on authentication errors,
+        /// so the caller can distinguish between database errors and invalid credentials.
+        /// </summary>
+        /// <param name="username">Username to look up.</param>
+        /// <param name="passwordHash">Plain-text password sent by the client (hashed inside the stored procedure).</param>
+        /// <returns>
+        /// A <see cref="ValidarLoginResult"/> containing the matched user, role, module origin,
+        /// and a diagnostic message. <c>EsExitoso</c> is <c>false</c> on failure.
+        /// </returns>
         public async Task<ValidarLoginResult> ValidarUserPassAsync(string username, string passwordHash)
         {
             try
@@ -36,14 +52,12 @@ namespace Services
                     parameters.Add("@p_modulo_output", dbType: DbType.String, direction: ParameterDirection.Output, size: 50);
                     parameters.Add("@p_msj", dbType: DbType.String, direction: ParameterDirection.Output, size: 100);
 
-                    // Ejecutamos el SP y obtenemos el resultado (SELECT final)
                     var usuario = await connection.QueryFirstOrDefaultAsync<UsuarioLogin>(
                         "sp_ValidarLoginFinal",
                         parameters,
                         commandType: CommandType.StoredProcedure
                     );
 
-                    // Obtenemos los parámetros de salida
                     var result = new ValidarLoginResult
                     {
                         Usuario = usuario,
@@ -57,18 +71,12 @@ namespace Services
             }
             catch (Exception ex)
             {
-                // Log detallado del error
-                Console.WriteLine($"Error en ValidarUserPassAsync: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-
-                // Retornar un resultado de error en lugar de propagar la excepción
                 return new ValidarLoginResult
                 {
                     Usuario = null,
                     Rol = null,
                     ModuloOrigen = null,
                     Mensaje = $"Error al validar credenciales: {ex.Message}",
-                    //EsExitoso = false
                 };
             }
         }

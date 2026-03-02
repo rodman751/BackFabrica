@@ -3,10 +3,15 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Data;
-using System.Text; // Necesario para Encoding
+using System.Text;
 
 namespace CapaDapper.Cadena
 {
+    /// <summary>
+    /// Creates SQL database connections by resolving the active connection profile from the HTTP request context.
+    /// Profile priority: <c>X-Connection-Profile</c> header → session value → default <c>Local</c>.
+    /// The resolved profile's template connection string is formatted with <see cref="IDatabaseContext.CurrentDb"/>.
+    /// </summary>
     public class DbConnectionFactory : IDbConnectionFactory
     {
         private readonly IDatabaseContext _dbContext;
@@ -20,15 +25,15 @@ namespace CapaDapper.Cadena
             _httpContextAccessor = httpContextAccessor;
         }
 
+        /// <inheritdoc/>
         public IDbConnection CreateConnection()
         {
-            string selectedProfile = "Local"; // Valor por defecto inicial
+            string selectedProfile = "Local";
 
             try
             {
                 var httpContext = _httpContextAccessor.HttpContext;
 
-                // 1. PRIORIDAD ALTA: Intentar leer el perfil desde el header (para API/APK)
                 if (httpContext?.Request?.Headers != null && httpContext.Request.Headers.ContainsKey("X-Connection-Profile"))
                 {
                     var headerValue = httpContext.Request.Headers["X-Connection-Profile"].ToString();
@@ -38,7 +43,6 @@ namespace CapaDapper.Cadena
                         selectedProfile = "Local";
                     }
                 }
-                // 2. PRIORIDAD MEDIA: Si no hay header, intentar leer de la sesión (para MVC)
                 else
                 {
                     var session = httpContext?.Session;
@@ -54,18 +58,15 @@ namespace CapaDapper.Cadena
             }
             catch (Exception ex)
             {
-                // Si hay error al leer header o sesión, usar el perfil por defecto
-                Console.WriteLine($"Advertencia al leer perfil de conexión: {ex.Message}. Usando perfil por defecto: {selectedProfile}");
+                _ = ex;
             }
 
-            // 3. Validar Configuración
             var connectionTemplate = _configuration[$"ConnectionProfiles:{selectedProfile}:ConnectionString"]
                                     ?? _configuration.GetConnectionString("TemplateConnection");
 
             if (string.IsNullOrEmpty(connectionTemplate))
                 throw new InvalidOperationException($"No se encontró el perfil de conexión: {selectedProfile}");
 
-            // 4. Validar DB seleccionada
             if (string.IsNullOrEmpty(_dbContext.CurrentDb))
                 throw new Exception("Debes seleccionar una base de datos primero.");
 

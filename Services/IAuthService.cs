@@ -7,9 +7,18 @@ using System.Threading.Tasks;
 
 namespace Services
 {
+    /// <summary>
+    /// Defines the authentication business logic contract.
+    /// Implementations validate credentials and issue JWT tokens.
+    /// </summary>
     public interface IAuthService
     {
-        // Devuelve los datos completos del login (token + usuario + rol + moduloOrigen)
+        /// <summary>
+        /// Authenticates a user and returns a JWT token together with their profile information.
+        /// </summary>
+        /// <param name="usuario">Username to authenticate.</param>
+        /// <param name="password">Plain-text password to validate.</param>
+        /// <returns>A <see cref="LoginResponseDto"/> containing the signed JWT token and user data.</returns>
         Task<LoginResponseDto> LoginAsync(string usuario, string password);
     }
 }

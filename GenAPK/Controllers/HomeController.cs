@@ -1,4 +1,4 @@
-﻿using CapaDapper.DataService;
+using CapaDapper.DataService;
 using CapaDapper.Dtos;
 using GenAPK.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -53,7 +53,6 @@ namespace GenAPK.Controllers
 		{
 			try
 			{
-				// Validaciones
 				if (archivoSql == null || archivoSql.Length == 0)
 				{
 					return Json(new { success = false, message = "No se ha seleccionado ningún archivo." });
@@ -64,14 +63,12 @@ namespace GenAPK.Controllers
 					return Json(new { success = false, message = "Debe proporcionar un nombre para la base de datos." });
 				}
 
-				// Validar extensión del archivo
 				var extension = Path.GetExtension(archivoSql.FileName).ToLower();
 				if (extension != ".sql" && extension != ".txt")
 				{
 					return Json(new { success = false, message = "Solo se permiten archivos .sql o .txt" });
 				}
 
-				// Leer el contenido del archivo
 				string contenidoSql;
 				using (var reader = new StreamReader(archivoSql.OpenReadStream(), Encoding.UTF8))
 				{
@@ -83,13 +80,11 @@ namespace GenAPK.Controllers
 					return Json(new { success = false, message = "El archivo está vacío." });
 				}
 
-				// Crear el request para el método CrearNuevoModuloAsync
 				var request = new RequestCrearModuloDto
 				{
 					NombreDb = nombreDb.Trim()
 				};
 
-				// Usar el parser .NET para convertir el SQL en el JSON esperado por el SP
 				string jsonTablas;
 				try
 				{
@@ -103,7 +98,6 @@ namespace GenAPK.Controllers
 
 				request.JsonTablas = jsonTablas;
 
-				// Llamar al método de creación
 				var resultado = await _dbMetadataRepository.CrearNuevoModuloAsync(request);
 
 				if (resultado)
@@ -127,6 +121,9 @@ namespace GenAPK.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Returns the error view populated with the current request identifier for diagnostic tracing.
+		/// </summary>
 		[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 		public IActionResult Error()
 		{
